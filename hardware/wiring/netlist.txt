@@ -1,0 +1,250 @@
+OTONOM ARAC - WIRING NETLIST
+============================
+
+Format:
+KAYNAK -> HEDEF
+
+Notlar:
+- Enerji vermeden once polarite ve kisa devre kontrolu yap.
+- Pi GPIO sinyalleri 3.3 V'u asmamalidir.
+- 4S LiPo motorlara dogrudan baglanmamalidir.
+- LIDAR gucu Pi'nin USB 5 V hattindan alinmaz.
+
+
+============================================================
+1. BATARYA VE ANA DAGITIM
+============================================================
+
+BATTERY_PLUS
+  -> MAIN_SWITCH_INPUT
+
+MAIN_SWITCH_OUTPUT
+  -> MAIN_FUSE_INPUT
+
+MAIN_FUSE_OUTPUT
+  -> POWER_DISTRIBUTION_POSITIVE
+
+BATTERY_MINUS
+  -> POWER_DISTRIBUTION_GROUND
+
+
+============================================================
+2. MOTOR BESLEME KOLU
+============================================================
+
+POWER_DISTRIBUTION_POSITIVE
+  -> MOTOR_REGULATOR_INPUT_POSITIVE
+
+POWER_DISTRIBUTION_GROUND
+  -> MOTOR_REGULATOR_INPUT_GROUND
+
+MOTOR_REGULATOR_OUTPUT_12V
+  -> LEFT_L298N_MOTOR_SUPPLY
+
+MOTOR_REGULATOR_OUTPUT_12V
+  -> RIGHT_L298N_MOTOR_SUPPLY
+
+MOTOR_REGULATOR_OUTPUT_GROUND
+  -> COMMON_GROUND
+
+# Motor besleme cikisi 12 V nominal motorlara uygun olmalidir.
+# Regulator iki motorun gerekli akimini karsilamalidir.
+# 4S LiPo dogrudan L298N motor besleme girislerine baglanmaz.
+
+
+============================================================
+3. RASPBERRY PI 5 BESLEME KOLU
+============================================================
+
+POWER_DISTRIBUTION_POSITIVE
+  -> PI_REGULATOR_INPUT_POSITIVE
+
+POWER_DISTRIBUTION_GROUND
+  -> PI_REGULATOR_INPUT_GROUND
+
+PI_REGULATOR_OUTPUT_5V
+  -> RASPBERRY_PI_5_USB_C_POWER_INPUT
+
+PI_REGULATOR_OUTPUT_GROUND
+  -> COMMON_GROUND
+
+RASPBERRY_PI_GND
+  -> COMMON_GROUND
+
+# Pi regulatoru 5 V / 5 A hedefini desteklemelidir.
+# USB-C kablo ve regulator kapasitesi dikkate alinmalidir.
+
+
+============================================================
+4. RPLIDAR S3 BESLEME KOLU
+============================================================
+
+POWER_DISTRIBUTION_POSITIVE
+  -> LIDAR_MP1584_INPUT_POSITIVE
+
+POWER_DISTRIBUTION_GROUND
+  -> LIDAR_MP1584_INPUT_GROUND
+
+LIDAR_MP1584_OUTPUT_5V
+  -> RPLIDAR_USB_ADAPTER_EXTERNAL_5V_INPUT
+
+LIDAR_MP1584_OUTPUT_GROUND
+  -> RPLIDAR_USB_ADAPTER_EXTERNAL_GROUND
+
+RPLIDAR_USB_ADAPTER_USB_DATA
+  -> RASPBERRY_PI_5_USB_PORT
+
+# LiDAR beslemesi MP1584EN buck converter uzerinden gelir.
+# Hedef: yaklasik 5.00 V; izin verilen aralik 4.9-5.2 V.
+# Baslangic akimi yaklasik 1.2 A oldugundan yeterli kapasite gerekir.
+# USB VBUS ile harici 5 V hatti birbirini geri beslememelidir.
+# Raspberry Pi USB portu LiDAR guc kaynagi olarak kullanilmaz.
+
+
+============================================================
+5. SOL L298N VE SOL MOTOR
+============================================================
+
+RASPBERRY_PI_GPIO12_PHYSICAL_32
+  -> LEFT_L298N_ENA
+
+RASPBERRY_PI_GPIO5_PHYSICAL_29
+  -> LEFT_L298N_IN1
+
+RASPBERRY_PI_GPIO6_PHYSICAL_31
+  -> LEFT_L298N_IN2
+
+LEFT_L298N_OUT1
+  -> LEFT_MOTOR_TERMINAL_A
+
+LEFT_L298N_OUT2
+  -> LEFT_MOTOR_TERMINAL_B
+
+LEFT_L298N_GND
+  -> COMMON_GROUND
+
+# ENA jumperi PWM kontrolu icin cikarilir.
+# 5V-EN jumperi kullanilan kartin dogrulanmis duzenine gore ayarlanir.
+
+
+============================================================
+6. SAG L298N VE SAG MOTOR
+============================================================
+
+RASPBERRY_PI_GPIO13_PHYSICAL_33
+  -> RIGHT_L298N_ENA
+
+RASPBERRY_PI_GPIO16_PHYSICAL_36
+  -> RIGHT_L298N_IN1
+
+RASPBERRY_PI_GPIO20_PHYSICAL_38
+  -> RIGHT_L298N_IN2
+
+RIGHT_L298N_OUT1
+  -> RIGHT_MOTOR_TERMINAL_A
+
+RIGHT_L298N_OUT2
+  -> RIGHT_MOTOR_TERMINAL_B
+
+RIGHT_L298N_GND
+  -> COMMON_GROUND
+
+# ENA jumperi PWM kontrolu icin cikarilir.
+# 5V-EN jumperi kullanilan kartin dogrulanmis duzenine gore ayarlanir.
+
+
+============================================================
+7. SOL MOTOR ENKODERI
+============================================================
+
+LEFT_ENCODER_A
+  -> RASPBERRY_PI_GPIO17_PHYSICAL_11
+
+LEFT_ENCODER_B
+  -> RASPBERRY_PI_GPIO27_PHYSICAL_13
+
+LEFT_ENCODER_VCC
+  -> VERIFIED_ENCODER_SUPPLY
+
+LEFT_ENCODER_GND
+  -> COMMON_GROUND
+
+
+============================================================
+8. SAG MOTOR ENKODERI
+============================================================
+
+RIGHT_ENCODER_A
+  -> RASPBERRY_PI_GPIO22_PHYSICAL_15
+
+RIGHT_ENCODER_B
+  -> RASPBERRY_PI_GPIO23_PHYSICAL_16
+
+RIGHT_ENCODER_VCC
+  -> VERIFIED_ENCODER_SUPPLY
+
+RIGHT_ENCODER_GND
+  -> COMMON_GROUND
+
+# Encoder beslemesi motorun encoder dokumaniyla uyumlu olmalidir.
+# Pi GPIO pinlerine gelen lojik sinyal 3.3 V'u asmamalidir.
+# Gerekirse uygun lojik seviye donusturucu kullanilir.
+
+
+============================================================
+9. ORTAK TOPRAK
+============================================================
+
+BATTERY_MINUS
+  -> POWER_DISTRIBUTION_GROUND
+
+POWER_DISTRIBUTION_GROUND
+  -> PI_REGULATOR_INPUT_GROUND
+
+POWER_DISTRIBUTION_GROUND
+  -> MOTOR_REGULATOR_INPUT_GROUND
+
+POWER_DISTRIBUTION_GROUND
+  -> LIDAR_MP1584_INPUT_GROUND
+
+PI_REGULATOR_OUTPUT_GROUND
+  -> COMMON_GROUND
+
+MOTOR_REGULATOR_OUTPUT_GROUND
+  -> COMMON_GROUND
+
+LIDAR_MP1584_OUTPUT_GROUND
+  -> COMMON_GROUND
+
+LEFT_L298N_GND
+  -> COMMON_GROUND
+
+RIGHT_L298N_GND
+  -> COMMON_GROUND
+
+RASPBERRY_PI_GND
+  -> COMMON_GROUND
+
+LEFT_ENCODER_GND
+  -> COMMON_GROUND
+
+RIGHT_ENCODER_GND
+  -> COMMON_GROUND
+
+
+============================================================
+10. ENERJI VERME ONCESI KONTROL
+============================================================
+
+[ ] Batarya polaritesi dogrulandi.
+[ ] Ana sigorta uygun secildi.
+[ ] Motor regulatoru cikisi olculdu.
+[ ] Pi regulatoru cikisi olculdu.
+[ ] MP1584EN cikisi olculdu.
+[ ] LIDAR guc hatti Pi USB 5 V hattindan ayri.
+[ ] USB adaptoru ile harici 5 V arasinda geri besleme yok.
+[ ] L298N ENA ve 5V-EN duzenleri dogrulandi.
+[ ] Enkoder beslemesi ve GPIO sinyal seviyeleri dogrulandi.
+[ ] Ortak GND baglantilari kontrol edildi.
+[ ] Kisa devre kontrolu yapildi.
+[ ] Ilk motor testinde tekerlekler yerden kesildi.
