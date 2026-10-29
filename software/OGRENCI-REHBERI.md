@@ -69,7 +69,12 @@ Sorun olursa bu sayfa seni kurtarır. Öğretmenine fotoğraf gönderirken bu sa
 **Hedef:** Pi'de her şey kurulu ve program kendini kontrol edebiliyor.
 **Neden:** Daha motoru çalıştırmadan, yazılımın bozuk olup olmadığını anlarız. Böylece sonraki hata kesin "donanımdır".
 
-1. Kurulum için: `notes/kurulum-ubuntu-ros.md` dosyasını açıp **başından sonuna** sırayla yap (yaklaşık 1 saat; interneti kapatma).
+1. SD karta **Ubuntu Server 24.04 LTS (64-bit)** yazıldıktan ve Pi internete bağlandıktan sonra, Pi'de şu **tek komutu** çalıştır (20–40 dk sürer, pencereyi ve interneti kapatma):
+   ```bash
+   sudo apt-get install -y git && git clone https://github.com/atestokhay/autonomous-car.git && bash autonomous-car/kurulum.sh
+   ```
+   Bitince ekranda `KURULUM TAMAMLANDI ✓` yazar. Sonra `sudo reboot` yap. Hata çıkarsa aynı `bash autonomous-car/kurulum.sh` komutunu tekrar çalıştır (kaldığı yerden devam eder); yine olmazsa `~/kurulum_log.txt` dosyasını öğretmene gönder.
+   (Elle kurulum adımları yedek olarak `notes/kurulum-ubuntu-ros.md` içinde.)
 2. Testi çalıştır (motor HAREKET ETMEZ):
    ```bash
    cd ~/autonomous-car/software

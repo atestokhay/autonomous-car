@@ -16,7 +16,7 @@ Raspberry Pi 5 + RPLIDAR S3 + iki enkoderli motorla **duvar takibi yapan** otono
 4. Ölçümlerini `../hardware/docs/test_sheet.md`'ye yaz
 
 ## Hızlı başlangıç
-1. Pi'ye **Ubuntu 24.04** + ROS 2 Jazzy kur → `notes/kurulum-ubuntu-ros.md`
+1. Pi'ye **Ubuntu 24.04** yaz, sonra tek komut: `bash ~/autonomous-car/kurulum.sh` (ayrıntı/elle yol: `notes/kurulum-ubuntu-ros.md`)
 2. `cd software && python3 -m unittest discover -s tests` → hepsi `OK` olmalı (Pi'yi doğrular)
 3. Aşamaları sırayla yap (aşağıdaki tablo). Her aşama klasöründe kendi `README.md`'si var.
 
