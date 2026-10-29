@@ -17,7 +17,11 @@ def resolve_gpiochip(value):
     """pins.yaml `gpiochip`: sayı ya da "auto" (gpiodetect ile bulur)."""
     if isinstance(value, int):
         return value
-    out = subprocess.run(["gpiodetect"], capture_output=True, text=True, timeout=5).stdout
+    try:
+        out = subprocess.run(["gpiodetect"], capture_output=True, text=True, timeout=5).stdout
+    except FileNotFoundError:
+        raise SystemExit("`gpiodetect` bulunamadı: bu bir Raspberry Pi değil ya da gpiod kurulu değil.\n"
+                         "Pi'deysen: sudo apt install gpiod   (donanımsız deneme için: --mock)")
     chip = parse_gpiodetect(out)
     if chip is None:
         raise RuntimeError("gpiodetect çıktısında pinctrl-rp1 yok. `sudo apt install gpiod` kurulu mu? "

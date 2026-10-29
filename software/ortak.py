@@ -11,8 +11,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 PY = sys.executable
-STATE = Path.home() / ".arac_ilerleme.json"
 MOCK = "--mock" in sys.argv
+# deneme (--mock) ilerlemesi gerçek ilerlemeyi bozmasın diye ayrı dosyada tutulur
+STATE = Path.home() / (".arac_ilerleme_deneme.json" if MOCK else ".arac_ilerleme.json")
 ROS_ENV = ("source /opt/ros/jazzy/setup.bash; "
            "[ -f ~/ros2_ws/install/setup.bash ] && source ~/ros2_ws/install/setup.bash; ")
 
