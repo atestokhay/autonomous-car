@@ -1,6 +1,6 @@
 # Aşama 5 — LiDAR (RPLIDAR S3)
 
-Önce `~/autonomous-car.v2/hardware/` aşama 5 kontrol listesi: adaptör pinout'u, **MP1584EN çıkışı ~5,0 V**, USB sadece veri.
+Önce kablolama sihirbazındaki LiDAR adımı: adaptör pinout'u, **MP1584EN çıkışı ~5,0 V**, USB sadece veri.
 LiDAR gücü Pi'den **alınmaz**.
 
 ## 1) Seri bağlantı kontrolü (ROS'suz)

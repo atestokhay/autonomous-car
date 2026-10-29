@@ -1,6 +1,6 @@
 # Kurulum: Ubuntu 24.04 + ROS 2 Jazzy (Raspberry Pi 5)
 
-> **Kolay yol:** Bu sayfadaki her şeyi tek komut yapar: `kurulum (autonomous-car.v2 deposundaki README)`. Aşağıdaki adımlar o betik takılırsa elle yapmak içindir.
+> **Kolay yol:** Bu sayfadaki her şeyi tek komut yapar: `kurulum.sh` (autonomous-car.v2 deposu). Aşağıdaki adımlar o betik takılırsa elle yapmak içindir.
 
 Her komutu sırayla, hata çıkarsa **durup** hata satırını kaydet. İnternet bağlantısı gerekir.
 

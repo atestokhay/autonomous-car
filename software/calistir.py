@@ -12,123 +12,10 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
-PY = sys.executable
-STATE = Path.home() / ".arac_ilerleme.json"
-MOCK = "--mock" in sys.argv
-ROS_ENV = ("source /opt/ros/jazzy/setup.bash; "
-           "[ -f ~/ros2_ws/install/setup.bash ] && source ~/ros2_ws/install/setup.bash; ")
-
-
-# ---------- yardımcılar ----------
-def say(msg="", c=None):
-    cols = {"g": 32, "r": 31, "y": 33, "c": 36, "b": 1}
-    print(f"\033[{cols[c]}m{msg}\033[0m" if c else msg)
-
-
-def baslik(t):
-    say("\n" + "=" * 64, "c")
-    say(" " + t, "c")
-    say("=" * 64, "c")
-
-
-def ask_yn(q, default=None):
-    d = {"e": " [E/h]", "h": " [e/H]", None: " [e/h]"}[default]
-    while True:
-        a = input(f"\n{q}{d}: ").strip().lower()
-        if not a and default:
-            return default == "e"
-        if a in ("e", "evet"):
-            return True
-        if a in ("h", "hayır", "hayir"):
-            return False
-        print("Lütfen 'e' (evet) ya da 'h' (hayır) yaz.")
-
-
-def guvenlik(soru):
-    say("\n⚠️  GÜVENLİK", "y")
-    return ask_yn(soru + "\n   (Hazır değilsen 'h' de, hiçbir şey çalışmaz.)")
-
-
-def run(cmd, shell=False):
-    """Komutu çalıştırır, çıkış kodu 0 ise True."""
-    try:
-        return subprocess.run(cmd, cwd=ROOT, shell=shell,
-                              executable="/bin/bash" if shell else None).returncode == 0
-    except KeyboardInterrupt:
-        say("\nDurduruldu (Ctrl+C).", "y")
-        return False
-
-
-def script(*args):
-    return run([PY, *map(str, args)])
-
-
-def mock_arg():
-    return ["--mock"] if MOCK else []
-
-
-def edit_yaml_invert(section, side, value):
-    """pins.yaml içinde section (motors|encoders) altındaki side satırının invert değerini ayarlar."""
-    f = ROOT / "config" / "pins.yaml"
-    lines = f.read_text(encoding="utf-8").splitlines(keepends=True)
-    cur = None
-    for i, ln in enumerate(lines):
-        m = re.match(r"^(\w+):", ln)
-        if m:
-            cur = m.group(1)
-        if cur == section and re.match(rf"^\s+{side}:", ln):
-            lines[i] = re.sub(r"invert:\s*(true|false)", f"invert: {'true' if value else 'false'}", ln)
-            f.write_text("".join(lines), encoding="utf-8")
-            return True
-    return False
-
-
-def get_invert(section, side):
-    cur = None
-    for ln in (ROOT / "config" / "pins.yaml").read_text(encoding="utf-8").splitlines():
-        m = re.match(r"^(\w+):", ln)
-        if m:
-            cur = m.group(1)
-        if cur == section and re.match(rf"^\s+{side}:", ln):
-            return "invert: true" in ln
-    return False
-
-
-def set_robot_yaw(deg):
-    f = ROOT / "config" / "robot.yaml"
-    t = f.read_text(encoding="utf-8")
-    f.write_text(re.sub(r"lidar_yaw_deg:\s*[-\d.]+", f"lidar_yaw_deg: {deg}", t), encoding="utf-8")
-
-
-def load_state():
-    try:
-        return json.loads(STATE.read_text())
-    except Exception:  # noqa: BLE001
-        return {"done": []}
-
-
-def save_state(s):
-    try:
-        STATE.write_text(json.dumps(s))
-    except OSError:
-        pass
-
-
-def tak(basari):
-    if basari:
-        say("   ✓ Tamam", "g")
-    return basari
-
-
-def sorun(ne):
-    say(f"\n✗ {ne}", "r")
-    say("   Ne yapmalı:", "b")
-    say("   1) Yukarıdaki hata satırlarını oku; çoğu ne yapılacağını söyler.")
-    say("   2) Düzelttiysen aynı komutu yeniden çalıştır:  arac  (kaldığın adımdan devam eder)")
-    say("   3) Çözemezsen:  python3 tools/diag.py  → diag_rapor.txt dosyasını öğretmene gönder.")
-    say("      (Ayrıntılı kontrol listesi: ~/autonomous-car.v2/hardware/docs/emergency.md Bölüm B)")
-    return False
+import kablolama
+from ortak import *  # noqa: F401,F403
+from ortak import (MOCK, PY, ROOT, ROS_ENV, STATE, ask_yn, baslik, edit_yaml_invert, get_invert,  # noqa: F401
+                   guvenlik, load_state, mock_arg, run, save_state, say, script, set_robot_yaw, sorun, tak)
 
 
 # ---------- adımlar ----------
@@ -168,7 +55,7 @@ def a_enkoder():
         "Ekranda sayılar akacak. Bitirince Ctrl+C'ye bas.\n"
         "⚠️  Enkoder güç kablosu Pi'nin 3,3 V pinine bağlı olmalı (5 V DEĞİL).")
     if not ask_yn("Enkoder gücü 3,3 V pinine (pin 1 ve 17) bağlı mı?"):
-        say("Önce kabloyu düzelt (~/autonomous-car.v2/hardware/BAGLANTILAR.md). 5 V Pi'nin pinini yakar!", "r")
+        say("Önce kabloyu düzelt (arac kablo). 5 V Pi'nin pinini yakar!", "r")
         return False
     for side, ad in (("left", "SOL"), ("right", "SAĞ")):
         for deneme in range(2):
@@ -181,7 +68,7 @@ def a_enkoder():
                 tak(True)
                 break
             if ask_yn("Sayı hiç değişmedi mi?", "h"):
-                return sorun(f"{ad} enkoder sayı üretmiyor: VCC/GND/A/B kablolarını kontrol et (~/autonomous-car.v2/hardware/BAGLANTILAR.md).")
+                return sorun(f"{ad} enkoder sayı üretmiyor: VCC/GND/A/B kablolarını kontrol et (arac kablo).")
             if deneme == 0:
                 say("Yönü yazılımda çeviriyorum, tekrar deniyoruz.", "y")
                 edit_yaml_invert("encoders", side, not get_invert("encoders", side))
@@ -319,7 +206,10 @@ def a_duvar_yer():
     return duvar_takibi(0.5, "Yerde")
 
 
+PI_KAPATILDI = Path.home() / ".arac_pi_kapatildi"
+
 STEPS = [
+    ("kablo_robot", kablolama.a_kablo_robot), ("kablo_pi", kablolama.a_kablo_pi), ("guc", kablolama.a_guc_dogrula),
     ("yazilim", a_yazilim_testi), ("motor", a_motor), ("enkoder", a_enkoder), ("pid", a_pid),
     ("lidar", a_lidar_seri), ("odometri", a_odometri), ("yon", a_lidar_yon),
     ("sim", a_sim), ("hava", a_duvar_hava), ("yer", a_duvar_yer),
@@ -327,10 +217,21 @@ STEPS = [
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "kablo":
+        kablolama.tablo_goster()
+        return
+    if len(sys.argv) > 1 and sys.argv[1] == "acil":
+        f = ROOT / "docs" / "acil-durum.md"
+        subprocess.run(["less", "-R", str(f)]) if shutil.which("less") else print(f.read_text(encoding="utf-8"))
+        return
     say("\n  OTONOM ARAÇ — REHBERLİ ÇALIŞTIRMA", "c")
     say("  Her adımı sırayla yapacağız. Ctrl+C = o anki işi durdurur. Şalter = her zaman en güvenlisi.\n")
     st = load_state()
     done = set(st["done"])
+    if PI_KAPATILDI.exists():
+        PI_KAPATILDI.unlink()
+        done.add("kablo_pi")
+        say("Pi kablolaması tamamlandı sayıldı (Pi'yi kapatıp yeniden açtın).", "g")
     if done and len(done) < len(STEPS):
         say(f"Kaldığın yer hatırlandı: {len(done)}/{len(STEPS)} adım tamam.")
         if not ask_yn("Kaldığın adımdan devam edelim mi? ('h' = baştan)", "e"):

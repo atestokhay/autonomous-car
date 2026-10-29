@@ -1,6 +1,6 @@
 # Aşama 3 — Enkoder
 
-**Önce güvenlik:** Enkoder VCC'si Pi'nin **3,3 V** pinine (pin 1 / 17) bağlı olmalı, **5 V'a değil** (`~/autonomous-car.v2/hardware/README.md` → "Jumper ve enkoder").
+**Önce güvenlik:** Enkoder VCC'si Pi'nin **3,3 V** pinine (pin 1 / 17) bağlı olmalı, **5 V'a değil** (kablolama sihirbazı: `arac kablo`).
 Enerji verince tekerleği elle çevirirken A ve B pinlerinde multimetreyle ölç: 3,3 V'u geçiyorsa hemen sök.
 
 ```bash

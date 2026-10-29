@@ -3,7 +3,7 @@
 > **Öğrenci misin?** Kurulumdan sonra terminale sadece `arac` yaz. Aşağısı ayrıntılı başvuru içindir.
 
 Raspberry Pi 5 + RPLIDAR S3 + iki enkoderli motorla **duvar takibi yapan** otonom araç. Donanım bağlantıları
-`~/autonomous-car.v2/hardware/` klasöründe; buradaki pinler (`config/pins.yaml`) o dokümanlarla birebir aynıdır.
+`arac kablo` sihirbazında anlatılır; pinler `config/pins.yaml` dosyasından okunur (tek kaynak).
 
 > **Durum (dürüst özet):** Kodun tamamı simülasyonda ve birim testlerinde (46 test) doğrulandı. **Gerçek robotta,
 > gerçek Pi 5'te ve gerçek ROS 2'de henüz çalıştırılmadı.** Bu yüzden aşamalar sırayla, her birinin "Bitti sayılır"
@@ -11,12 +11,12 @@ Raspberry Pi 5 + RPLIDAR S3 + iki enkoderli motorla **duvar takibi yapan** otono
 
 ## Bir şey çalışmıyorsa
 1. `python3 tools/diag.py` (motor oynatmaz) → `diag_rapor.txt`
-2. `~/autonomous-car.v2/hardware/docs/emergency.md` → Bölüm B: sırayla kontrol listesi
+2. `arac acil` → Bölüm B: sırayla kontrol listesi
 3. `notes/sorun-giderme.md`: aşama aşama belirti tablosu
-4. Ölçümlerini `~/autonomous-car.v2/hardware/docs/test_sheet.md`'ye yaz
+4. Gerilim ölçümlerin otomatik olarak `~/.arac_olcumler.json` dosyasına kaydedilir
 
 ## Hızlı başlangıç
-1. Pi'ye **Ubuntu 24.04** yaz, sonra tek komut: `autonomous-car.v2` deposundaki kurulum komutu (ayrıntı/elle yol: `notes/kurulum-ubuntu-ros.md`)
+1. Pi'ye **Ubuntu 24.04** yaz, sonra tek komut: `autonomous-car.v2` deposundaki tek komut (ayrıntı/elle yol: `notes/kurulum-ubuntu-ros.md`)
 2. `cd software && python3 -m unittest discover -s tests` → hepsi `OK` olmalı (Pi'yi doğrular)
 3. Aşamaları sırayla yap (aşağıdaki tablo). Her aşama klasöründe kendi `README.md`'si var.
 

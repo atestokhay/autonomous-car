@@ -1,6 +1,6 @@
 # Aşama 1 — Pi kurulumu ve güç doğrulaması
 
-Bağlantı ve ölçümler: `~/autonomous-car.v2/hardware/` (önce oradaki enerji verme öncesi kontrol listesi). Burada yazılım tarafı.
+Bağlantı ve ölçümler: `arac` kablolama sihirbazı (enerji vermeden önceki kontroller orada). Burada yazılım tarafı.
 
 ## Adımlar
 1. Raspberry Pi Imager ile microSD'ye **Ubuntu 24.04 LTS (64-bit)** yaz (ROS 2 Jazzy bu sürüm içindir; sonradan değiştirme).
