@@ -1,5 +1,7 @@
 # software — Otonom araç yazılımı
 
+> **Öğrenci misin? → [`OGRENCI-REHBERI.md`](OGRENCI-REHBERI.md) dosyasından başla** (adım adım, kopyala-yapıştır). Komutları ezberleme: `python3 menu.py`.
+
 Raspberry Pi 5 + RPLIDAR S3 + iki enkoderli motorla **duvar takibi yapan** otonom araç. Donanım bağlantıları
 `../hardware/` klasöründe; buradaki pinler (`config/pins.yaml`) o dokümanlarla birebir aynıdır.
 
