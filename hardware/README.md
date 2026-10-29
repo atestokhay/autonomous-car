@@ -167,31 +167,12 @@ Detaylı ölçüm ve kabul işlemleri için:
 - [`docs/emergency.md`](docs/emergency.md) — Acil durum prosedürleri ve arıza teşhisi.
 - [`wiring/README.md`](wiring/README.md) — Kablolama, renk kodları ve bağlantı referansı.
 - [`wiring/netlist.txt`](wiring/netlist.txt) — Hızlı bağlantı listesi.
+- [`wiring/schematic.png`](wiring/schematic.png) — Görsel bağlantı şeması.
 - [`wiring/schematic.fzz`](wiring/schematic.fzz) — Fritzing proje dosyası.
 
 Her testte ölçülen değerler ve sonuçlar kaydedilmelidir. Bir test başarısız olduğunda, neden belirlenmeden sonraki aşamaya geçilmemelidir.
 
-## 6. Kesinleşmiş uygulama kararları (öğrenciler için)
-
-Yukarıdaki genel uyarıların bu projedeki somut karşılığı. Emin değilsen bu tabloya uy; farklı bir parça
-kullanıyorsan öğretmenine sor.
-
-| Konu | Karar |
-|---|---|
-| **Enkoder beslemesi** | Her iki enkoderin VCC'si **Raspberry Pi 3,3 V** pinine (fiziksel pin 1 veya 17) bağlanır; **5 V'a bağlanmaz.** Böylece çıkış sinyali 3,3 V'u aşamaz. GND ortak toprağa (örn. pin 14, 20). Enkoder 3,3 V ile çalışmıyorsa (tekerlek dönerken sinyal yok) 5 V'a geçme: öğretmene yaz, seviye dönüştürücü gerekir. |
-| **Enkoder sinyal doğrulaması** | Enerji verildikten sonra, tekerlek elle dönerken A/B pininde multimetreyle gerilim ölç: 3,3 V'u geçiyorsa **hemen sök**. |
-| **L298N `5V-EN` jumper'ı** | **Takılı bırak** (kart 12 V besleme ile kendi 5 V mantık regülatörünü kullanır). Kartın "5V" terminaline **hiçbir şey bağlama**; Pi'nin 5 V'una da bağlama. Motor beslemesi 12 V'tur (kartın regülatörü için 12 V sınırında, bu yüzden motor regülatörü 12,0 V civarına ayarlı olmalı, üstüne çıkmamalı). |
-| **L298N `ENA` jumper'ı** | **Çıkar** (PWM kontrolü için). Jumper takılı kalırsa motor hep tam hızda gider. |
-| **L298N gerilim kaybı** | L298N yaklaşık 1,5–2 V düşürür: 12 V beslemede motor ≈ 10 V görür, boşta devir ≈ 360 rpm civarına düşer. Bu normaldir; yazılım (aşama 4) bunu kendisi ölçer. |
-| **Motor regülatörü** | 12 V, **en az 4 A** sürekli. Çıkış gerilimi 12,0 V ± 0,3 olacak şekilde ayarlanır, motor bağlanmadan ölçülür. |
-| **Ana sigorta** | 7,5–10 A DC sigorta (bkz. `docs/emergency.md` A6). |
-| **Batarya sınırı** | Toplam gerilim **14,0 V altına inince** (3,5 V/hücre) çalışmayı bırak ve şarj et; 12 V buck regülatörü bunun altında 12 V'u sağlayamaz. Asla 13,2 V (3,3 V/hücre) altına inme. Gerilim alarmı (buzzer) önerilir. |
-| **Pi besleme uyarısı** | Pi 5, 5 V/5 A olmayan bir kaynakta "güç kaynağı 5 A veremiyor" uyarısı verebilir ve USB akımını sınırlayabilir. Bu projede LiDAR USB'den beslenmediği için çalışmaya engel değildir; `vcgencmd get_throttled` = `0x0` kalması yeterlidir. |
-| **LiDAR USB adaptörü** | Adaptör üzerindeki besleme seçenekleri (anahtar/jumper) için adaptörün kendi şemasına bak; harici 5 V kullanıyorsan USB VBUS'ın Pi'den **gelmediğinden** emin ol (USB'den güç ve harici güç aynı anda LiDAR'a bağlanmamalı). |
-
-Bu kararlar donanım üzerinde henüz denenmemiştir; ilk testte `docs/test_sheet.md`'deki ölçümleri kaydet.
-
-## 7. Kaynaklar
+## 6. Kaynaklar
 
 - [Raspberry Pi resmi belgeleri](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html)
 - [RPLIDAR S3 veri sayfası](https://wiki.slamtec.com/download/attachments/83066883/SLAMTEC_rplidar_datasheet_S3_v1.1_en.pdf)

@@ -1,9 +1,0 @@
-# Başlangıç TAHMİNLERİ. stages/04-pid/autotune.py çalışınca config/tuned.yaml bunların üstüne yazılır.
-loop_hz: 100
-speed_window: 4           # hız, son 4 döngü penceresinden hesaplanır (tick çözünürlüğünü artırır)
-speed_alpha: 0.6          # pencere sonrası ek filtre (1.0 = filtre yok)
-max_accel_rad_s2: 60.0    # hedef hız rampası
-max_speed_rad_s: 30.0     # güvenlik sınırı (430 RPM ≈ 45 rad/s boşta; L298N kaybıyla ~37)
-
-left:  {kp: 0.03, ki: 0.08, kd: 0.0, kff: 0.027, deadband: 0.10, i_limit: 0.5, d_alpha: 0.2, ff_lead: 0.07}
-right: {kp: 0.03, ki: 0.08, kd: 0.0, kff: 0.027, deadband: 0.10, i_limit: 0.5, d_alpha: 0.2, ff_lead: 0.07}
