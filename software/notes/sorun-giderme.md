@@ -10,7 +10,7 @@
 | `vcgencmd get_throttled` ≠ `0x0` | Güç yetersiz: kablo kalınlığı/uzunluğu, kontaklar, regülatör akım kapasitesi |
 | `gpiodetect` boş / komut yok | `sudo apt install gpiod`; çıktıda `pinctrl-rp1` aranır |
 | `lgpio` import hatası | `sudo apt install python3-lgpio` |
-| `Permission denied` GPIO | `sudo usermod -aG gpio $USER` → çıkış-giriş |
+| `Permission denied` GPIO | `ls -l /dev/gpiochip*` ile grubuna bak; `notes/kurulum-ubuntu-ros.md` §2'deki udev kuralı uygulanmamışsa uygula, çıkış-giriş yap |
 | Pi'de düşük voltaj uyarısı | LiDAR gücünü Pi'den almıyorsa da, ortak GND kontrol et; Pi'yi besleyen hattın voltaj düşüşü (ince kablo, gevşek konnektör) |
 | Testler hata veriyor | `pip list` ile `pyyaml`, `numpy` var mı? Hata satırını gönder |
 
@@ -53,7 +53,7 @@
 | `Cevap yok` | Baud 1 000 000 (S3) olmalı; adaptörün baud desteği; USB kablosu çok uzun/kötü |
 | Yön yanlış | `robot.yaml` → `lidar_yaw_deg` (90/180/-90) |
 | Duvarlar ayna görüntüsü (sağ-sol ters) | `robot.yaml` → `lidar_inverted: true` |
-| `/scan` yok | `ros2 topic list`; `ros2 launch ...` hata mesajı; sllidar launch dosyası adı (bkz. kurulum notu 4) |
+| `/scan` yok | `ros2 topic list`; `ros2 launch` hata mesajı; `ros2 pkg executables sllidar_ros2` çıktısında `sllidar_node` var mı (kurulum notu 4) |
 | `sllidar_ros2` bulunamadı | `source ~/ros2_ws/install/setup.bash` unutulmuş; veya derleme hatası |
 | Çok az geçerli nokta | Lens kirli, cam/aynalı/siyah yüzey, güneş ışığı |
 

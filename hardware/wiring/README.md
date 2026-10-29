@@ -97,7 +97,7 @@ birleştirilir:
 - Sağ L298N GND'si
 - MP1584EN çıkış GND'si
 - Sol ve sağ enkoder GND'si
-- LiDAR harici besleme GND'ssi
+- LiDAR harici besleme GND'si
 
 Motor akımlarının Raspberry Pi'nin ince GND kablolarından geçmesine
 izin verilmemelidir. Yüksek akımlı motor dönüş yolları uygun kesitli
@@ -138,7 +138,7 @@ terminallerine bağlanır.
 |---|---:|---:|
 | A | GPIO17 | 11 |
 | B | GPIO27 | 13 |
-| VCC | Doğrulanmış besleme | Uygun 3,3 V kaynağı, yalnızca enkoder destekliyorsa |
+| VCC | 3,3 V | Pi 3,3 V pini (fiziksel pin 1 veya 17); **5 V'a bağlanmaz** |
 | GND | GND | Ortak toprak |
 
 ### Sağ motor enkoderi
@@ -147,7 +147,7 @@ terminallerine bağlanır.
 |---|---:|---:|
 | A | GPIO22 | 15 |
 | B | GPIO23 | 16 |
-| VCC | Doğrulanmış besleme | Uygun 3,3 V kaynağı, yalnızca enkoder destekliyorsa |
+| VCC | 3,3 V | Pi 3,3 V pini (fiziksel pin 1 veya 17); **5 V'a bağlanmaz** |
 | GND | GND | Ortak toprak |
 
 **GPIO güvenliği:** Raspberry Pi GPIO girişleri 5 V toleranslı değildir.
@@ -157,7 +157,7 @@ uygun olmalıdır. Gerekirse uygun seviye dönüştürücü kullanılmalıdır.
 ## 5. L298N jumper notları
 
 - `ENA` jumperi, ENA pininden PWM kontrolü kullanılacaksa çıkarılır.
-- `5V-EN` farklı bir işlev görür; ENA jumperiyle karıştırılmamalıdır.
+- `5V-EN` farklı bir işlev görür; ENA jumperiyle karıştırılmamalıdır. **Bu projede `5V-EN` takılı, `ENA` çıkarılmış olur** (ayrıntı: `../README.md` §6).
 - Lojik besleme ve `5V-EN` düzeni kullanılan kartın bağlantı
   şemasına uygun olmalıdır.
 - Kartın 5 V terminaline doğrulanmamış bir harici besleme bağlanmamalıdır.
@@ -178,4 +178,3 @@ uygun olmalıdır. Gerekirse uygun seviye dönüştürücü kullanılmalıdır.
 
 - `netlist.txt` — bağlantıların metinsel listesi
 - `schematic.fzz` — düzenlenebilir bağlantı şeması
-- `schematic.png` — şemanın dışa aktarılmış görüntüsü

@@ -15,9 +15,13 @@ sudo reboot
 ```bash
 sudo apt install -y git python3-pip python3-yaml python3-serial python3-numpy python3-matplotlib \
     python3-lgpio gpiod libraspberrypi-bin
-sudo usermod -aG dialout,gpio $USER      # çıkış yapıp tekrar gir
+sudo groupadd -f gpio
+sudo usermod -aG dialout,gpio $USER
+echo 'SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"' | sudo tee /etc/udev/rules.d/99-gpio.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+# ÇIKIŞ YAP ve tekrar gir (ya da sudo reboot)
 ```
-Kontrol: `gpiodetect` çıktısında `pinctrl-rp1` olmalı. (`RPi.GPIO` Pi 5'te ÇALIŞMAZ; kod `lgpio` kullanır.)
+Kontrol: `gpiodetect` çıktısında `pinctrl-rp1` olmalı (numara 0 ya da 4 olabilir, kod kendisi bulur). (`RPi.GPIO` Pi 5'te ÇALIŞMAZ; kod `lgpio` kullanır.)
 
 ## 3) ROS 2 Jazzy
 ```bash
@@ -40,15 +44,15 @@ ros2 --help        # çalışıyorsa tamam
 mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
 git clone https://github.com/Slamtec/sllidar_ros2.git
 cd ~/ros2_ws
-rosdep init 2>/dev/null; rosdep update
+sudo rosdep init 2>/dev/null; rosdep update
 rosdep install --from-paths src --ignore-src -y
 colcon build --symlink-install
 echo "source ~/ros2_ws/install/setup.bash" >> ~/.bashrc
 source ~/.bashrc
-ls $(ros2 pkg prefix sllidar_ros2)/share/sllidar_ros2/launch
+ros2 pkg executables sllidar_ros2
 ```
-Son komut S3 için bir launch dosyası göstermeli (beklenen: `sllidar_s3_launch.py`). **Adı farklıysa**
-`ros/launch/bringup.launch.py` içindeki `sllidar_s3_launch.py` yazısını o dosya adıyla değiştir.
+Çıktıda `sllidar_ros2 sllidar_node` satırı görünmeli. (Yazılımımız sürücüyü doğrudan bu düğümle başlatır;
+launch dosyası adına bağlı değildir.) Satır yoksa derleme başarısız olmuştur: `colcon build` çıktısındaki hatayı kaydet.
 
 ## 5) Yazılım
 ```bash

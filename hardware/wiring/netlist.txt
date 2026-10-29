@@ -164,7 +164,7 @@ LEFT_ENCODER_B
   -> RASPBERRY_PI_GPIO27_PHYSICAL_13
 
 LEFT_ENCODER_VCC
-  -> VERIFIED_ENCODER_SUPPLY
+  -> RASPBERRY_PI_3V3_PHYSICAL_1
 
 LEFT_ENCODER_GND
   -> COMMON_GROUND
@@ -181,12 +181,12 @@ RIGHT_ENCODER_B
   -> RASPBERRY_PI_GPIO23_PHYSICAL_16
 
 RIGHT_ENCODER_VCC
-  -> VERIFIED_ENCODER_SUPPLY
+  -> RASPBERRY_PI_3V3_PHYSICAL_17
 
 RIGHT_ENCODER_GND
   -> COMMON_GROUND
 
-# Encoder beslemesi motorun encoder dokumaniyla uyumlu olmalidir.
+# Encoder VCC Pi 3.3 V pinine baglanir (5 V'a DEGIL): cikis sinyali 3.3 V'u asamaz.
 # Pi GPIO pinlerine gelen lojik sinyal 3.3 V'u asmamalidir.
 # Gerekirse uygun lojik seviye donusturucu kullanilir.
 

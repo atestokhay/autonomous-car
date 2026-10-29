@@ -1,6 +1,7 @@
 # Aşama 3 — Enkoder
 
-Enkoder beslemesi ve GPIO seviyesi (3,3 V) hardware tarafında doğrulanmış olmalı.
+**Önce güvenlik:** Enkoder VCC'si Pi'nin **3,3 V** pinine (pin 1 / 17) bağlı olmalı, **5 V'a değil** (`hardware/README.md` §6).
+Enerji verince tekerleği elle çevirirken A ve B pinlerinde multimetreyle ölç: 3,3 V'u geçiyorsa hemen sök.
 
 ```bash
 python stages/03-enkoder/run.py watch                 # elle çevir, sayıyı izle

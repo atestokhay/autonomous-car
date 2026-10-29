@@ -7,6 +7,12 @@ Raspberry Pi 5 + RPLIDAR S3 + iki enkoderli motorla **duvar takibi yapan** otono
 > gerçek Pi 5'te ve gerçek ROS 2'de henüz çalıştırılmadı.** Bu yüzden aşamalar sırayla, her birinin "Bitti sayılır"
 > kriteri sağlanarak ilerlenir. Takıldığın yerde önce `notes/sorun-giderme.md`'ye bak.
 
+## Bir şey çalışmıyorsa
+1. `python3 tools/diag.py` (motor oynatmaz) → `diag_rapor.txt`
+2. `../hardware/docs/emergency.md` → Bölüm B: sırayla kontrol listesi
+3. `notes/sorun-giderme.md`: aşama aşama belirti tablosu
+4. Ölçümlerini `../hardware/docs/test_sheet.md`'ye yaz
+
 ## Hızlı başlangıç
 1. Pi'ye **Ubuntu 24.04** + ROS 2 Jazzy kur → `notes/kurulum-ubuntu-ros.md`
 2. `cd software && python3 -m unittest discover -s tests` → hepsi `OK` olmalı (Pi'yi doğrular)
