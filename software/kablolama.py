@@ -1,9 +1,10 @@
 """Donanım kablolama sihirbazı: hangi kablo nereye, adım adım. Pin numaraları config/pins.yaml'dan okunur."""
 import subprocess
+from pathlib import Path
 
 import yaml
 
-from ortak import (MOCK, ROOT, ask_float, ask_yn, baslik, say, sorun)
+from ortak import (MOCK, ROOT, ask_float, ask_yn, baslik, olcum_kaydet, say, sorun)
 
 # BCM GPIO -> fiziksel pin (40 pinli başlık)
 BCM2PIN = {2: 3, 3: 5, 4: 7, 14: 8, 15: 10, 17: 11, 18: 12, 27: 13, 22: 15, 23: 16, 24: 18, 10: 19, 9: 21,
@@ -11,6 +12,8 @@ BCM2PIN = {2: 3, 3: 5, 4: 7, 14: 8, 15: 10, 17: 11, 18: 12, 27: 13, 22: 15, 23: 
 GND_PINS = {6, 9, 14, 20, 25, 30, 34, 39}
 P3V3 = (1, 17)
 FIZIK_ISIM = {1: "3V3", 2: "5V", 4: "5V", 17: "3V3"}
+# "Robot önceden komple kablolandı" yolu seçildiyse işaret dosyası (Pi kapanıp açılınca da hatırlansın)
+HAZIR = Path.home() / (".arac_hazir_robot_deneme" if MOCK else ".arac_hazir_robot")
 
 
 def pins():
@@ -61,8 +64,157 @@ def kontrol_et(soru):
     return ask_yn(soru)
 
 
+# ---------- ortak ölçüm adımları ----------
+def bip_testi(baslik_metni, ek=""):
+    say(f"\n--- {baslik_metni} ---", "b")
+    say("Multimetreyi BİP (süreklilik) konumuna al. Bataryanın TAKILI OLMADIĞINDAN emin ol.\n"
+        "Bir probu GÜÇ DAĞITIM (+) barasına, diğerini GND barasına değdir." + ek + "\n"
+        "Regülatörlerin kondansatörleri yüzünden çok kısa bir 'cik' sesi normaldir; SÜREKLİ bip kısa devredir.")
+    if ask_yn("Multimetre SÜREKLİ BİP SESİ ÇIKARDI mı? (sürekli bip = kısa devre)", "h"):
+        say("Kısa devre var! Bataryayı TAKMA. Kabloları tek tek çıkararak hangisinin kısa yaptığını bul "
+            "(+ ile − uçları birbirine değiyor olabilir). Düzelttikten sonra tekrar: arac", "r")
+        return sorun("Güç dağıtımda kısa devre.")
+    return True
+
+
+def olc_batarya():
+    return ask_float("BATARYA geriliminin (dağıtım + ile GND arası)", 10.5, 12.7, "batarya_V",
+                     "10,5 V altı: 3S bataryayı şarj et. 12,7 V üstü: bu 3S değil ya da bataryada sorun var, kullanma.")
+
+
+def olc_ham(soru, ad):
+    """Ayarlamadan ÖNCEKİ (fabrika/eski) değeri kaydeder; aralık kontrolü yapmaz."""
+    while True:
+        a = input(f"\n{soru} (sayı yaz, örn. 5,02): ").strip().replace(",", ".")
+        try:
+            v = float(a)
+        except ValueError:
+            print("Lütfen sadece sayı yaz (virgül ya da nokta olur).")
+            continue
+        olcum_kaydet(ad, v)
+        return v
+
+
+def regulatorleri_ayarla():
+    """Üç regülatörün çıkışını hedefe getirir. Çıkışlarda YÜK OLMAMALI."""
+    say("Multimetreyi gerilim (V, düz çizgi =) konumuna al; kırmızı prob regülatör OUT+, siyah prob OUT−.\n"
+        "Regülatör üzerindeki küçük vidayı küçük tornavidayla yavaşça çevirerek ayarla.")
+    m = ask_float("MOTOR BUCK çıkışını 6,0 V yapacak şekilde ayarla. Ölçtüğün gerilim", 5.8, 6.2, "motor_regulator_V",
+                  "Vidayı çevirip 6,0 V'a getir; 6,2 V üstüne ÇIKMA (N20 motorlar 6 V'luktur).")
+    if m is None:
+        return False
+    pdc = ask_float("Pi DC-DC çıkışını (5,0–5,2 V) ölç ve yaz", 5.0, 5.2, "pi_dcdc_V",
+                    "Ayarlanabilir değilse bu modül uygun değildir: öğretmene haber ver.")
+    if pdc is None:
+        return False
+    mp = ask_float("MP1584EN çıkışını 5,00 V yapacak şekilde ayarla. Ölçtüğün gerilim", 4.95, 5.10, "mp1584_V",
+                   "LiDAR için 4,9–5,2 V gerekir; hedef 5,00 V. Vidayı çevirerek ayarla.")
+    return mp is not None
+
+
+def adim_onay(maddeler, soru_eki):
+    """Her maddeyi TEK TEK onaylatır; biri 'hayır' ise False."""
+    for m in maddeler:
+        if not ask_yn(f"{m}\n   → {soru_eki}", None):
+            say("Bu yapılmadan devam etmek GÜVENLİ DEĞİL. Yaptıktan sonra tekrar: arac", "r")
+            return False
+    return True
+
+
+# ---------- A0) ROBOT ÖNCEDEN KOMPLE KABLOLANDIYSA ----------
+def a_hazir_robot():
+    baslik("HAZIR ROBOT — Güvenli ölçüm ve ayar")
+    say("Robotu önce komple taktınız. Sorun değil; ama regülatörler AYARLANMADAN yüklere bağlıysa batarya\n"
+        "takıldığında LiDAR'a ve motorlara 12 V'a kadar gerilim gidebilir. Şimdi birkaç kabloyu GEÇİCİ olarak\n"
+        "çıkaracağız, regülatörleri ölçüp ayarlayacağız ve kabloları geri takacağız.", "y")
+
+    say("\n--- 1) ÖNCE: Pi'nin 5 V pinleri ---", "b")
+    say("Pi'nin pin 2 ve pin 4'ü 5 V'tur (pin 1'in hemen yanındaki, kart KENARINA yakın sıranın ilk iki pini).\n"
+        "Bu projede pin 2 ve pin 4'e HİÇBİR kablo takılmaz. TB6612 VCC, enkoderler ve BNO055 3,3 V'a (pin 1, 17) gider.")
+    if ask_yn("Pin 2 veya pin 4'e takılı bir kablo VAR mı?", "h"):
+        say("HEMEN şalteri kapat ve Pi'nin güç kablosunu çek! O kablo 3,3 V pinine (pin 1 ya da 17) taşınmalı.\n"
+            "Pi'ye 5 V'lu sinyal geldiyse GPIO'lar zarar görmüş olabilir: öğretmenine haber ver.", "r")
+        return sorun("5 V pinine kablo takılı.")
+
+    enerji = ask_yn("Robota daha önce batarya takılıp şalter AÇILDI mı? (bir kez bile)", "h")
+    if ask_yn("Pi şu an ROBOTUN bataryasından mı çalışıyor? (USB-C kablosu robottaki DC-DC'den geliyor)", "h"):
+        say("Ölçüm için Pi'nin robottan ayrılması gerekiyor. Pi'yi kapatacağım. Kapanınca (yeşil ışık söner, 10 sn):\n"
+            "  1) Şalteri KAPAT, bataryayı ÇIKAR.\n"
+            "  2) Pi'nin USB-C güç kablosunu çek. DC-DC'den gelen kablo havada kalsın, ucu metale değmesin.\n"
+            "  3) Pi'yi KENDİ duvar adaptörüyle aç, SSH ile bağlan, yine:  arac\n"
+            "  4) 'Robot zaten kablolandı mı?' sorusuna yine EVET de.", "y")
+        if ask_yn("Anladın mı? Pi'yi ŞİMDİ kapatayım mı?") and not MOCK:
+            subprocess.run(["sudo", "shutdown", "-h", "now"])
+        return False
+
+    say("\n--- 2) Gücü kes ---", "b")
+    if not adim_onay(["Ana şalter KAPALI.", "Batarya robottan ÇIKARILDI."], "Tamam mı?"):
+        return False
+
+    say("\n--- 3) Bu kabloları ÇIKAR (geçici) ---", "b")
+    say("Söktüğün her kablonun ucunu bantla ve etiketle; ucu hiçbir metale değmesin.", "y")
+    cikar = [
+        "✗ ÇIKAR: TB6612 VM kablosu — motor buck OUT+ ucundan sök (motorlara gidecek 6 V hattı).",
+        "✗ ÇIKAR: LiDAR 5V kablosu — MP1584EN OUT+ ucundan sök.",
+        "✗ ÇIKAR: LiDAR USB kablosu — Pi'nin USB portundan çek.",
+        "✗ ÇIKAR: Pi DC-DC'nin USB-C kablosu — Pi'ye TAKILI OLMAMALI (Pi şu an duvar adaptöründe).",
+    ]
+    if not adim_onay(cikar, "Çıkardın mı?"):
+        return False
+    say("\n--- Bunları ÇIKARMA (yerinde kalsın) ---", "g")
+    say("   ✓ Bütün GND kabloları (batarya −, GND bara, regülatör IN−/OUT−, TB6612 GND, LiDAR GND,\n"
+        "     enkoder ve BNO055 GND)\n"
+        "   ✓ Regülatörlerin GİRİŞ kabloları (IN+ / IN−)\n"
+        "   ✓ Pi'nin GPIO kabloları (TB6612, enkoderler, BNO055)\n"
+        "   ✓ Motor kabloları (AO1/AO2, BO1/BO2)")
+    if not ask_yn("Bunların hiçbirini sökmedin, hepsi yerinde mi?", "e"):
+        return sorun("Söktüğün kabloyu 'arac kablo' tablosuna ve hardware/wiring/README.md'ye göre geri tak.")
+
+    if not bip_testi("4) BİP TESTİ (kısa devre kontrolü)"):
+        return False
+
+    say("\n--- 5) Regülatörleri ÖLÇ ve AYARLA ---", "b")
+    say("Bataryayı tak, şalteri aç. Pi duvar adaptöründe kalsın. Regülatör çıkışlarında artık YÜK YOK.")
+    if not ask_yn("Batarya takıldı ve şalter açık mı?"):
+        return False
+    if olc_batarya() is None:
+        return False
+    say("\nÖnce vidalara DOKUNMADAN, şu anki (ayarlanmamış) değerleri ölç:", "b")
+    hm = olc_ham("MOTOR BUCK çıkışı (OUT+ / OUT−), vidaya dokunmadan", "motor_regulator_ilk_V")
+    hp = olc_ham("MP1584EN çıkışı (OUT+ / OUT−), vidaya dokunmadan", "mp1584_ilk_V")
+    if enerji and hm > 6.5:
+        say(f"⚠️  Motor buck {hm} V veriyordu ve robot daha önce açılmış: motorlar/TB6612 fazla gerilim görmüş olabilir.\n"
+            "   Motor testinde (adım 2) ısınma, koku, ses farkı olursa durdur ve öğretmene bildir.", "r")
+    if enerji and hp > 5.3:
+        say(f"⚠️  MP1584EN {hp} V veriyordu ve robot daha önce açılmış: LiDAR fazla gerilim görmüş olabilir.\n"
+            "   LiDAR'ı tekrar takmadan önce öğretmenine haber ver; LiDAR adımında 'Sağlık: İYİ' görmezsen kullanma.", "r")
+    if not regulatorleri_ayarla():
+        return False
+
+    say("\n--- 6) Gücü kes ve kabloları GERİ TAK ---", "b")
+    if not adim_onay(["Ana şalter KAPALI.", "Batarya ÇIKARILDI."], "Tamam mı?"):
+        return False
+    geri = [
+        "↩ GERİ TAK: TB6612 VM kablosu → motor buck OUT+.",
+        "↩ GERİ TAK: LiDAR 5V kablosu → MP1584EN OUT+.",
+    ]
+    if not adim_onay(geri, "Taktın mı?"):
+        return False
+    say("LiDAR USB kablosu ve Pi'nin USB-C kablosu SONRAKİ adımda takılacak; şimdi TAKMA.", "y")
+
+    if not bip_testi("7) İkinci BİP TESTİ", "\nSonra aynısını TB6612 VM ile GND arasında, MP1584EN OUT+ ile OUT− arasında da yap."):
+        return False
+    HAZIR.write_text("1")
+    say("\nGüç tarafı güvenli ✓. Sıradaki adımda Pi kablolarını kontrol edeceğiz.", "g")
+    return True
+
+
 # ---------- A) ROBOT TARAFI: Pi'ye DOKUNMADAN ----------
 def a_kablo_robot():
+    say("\nRobotun kablolamasını bu programdan ÖNCE komple yaptınız mı? (şemaya bakıp her şeyi taktınız mı?)", "b")
+    if ask_yn("Robot zaten TAMAMEN kablolandı mı?", "h"):
+        return a_hazir_robot()
+    HAZIR.unlink(missing_ok=True)
     baslik("KABLOLAMA 1/2 — Robot tarafı (Pi'ye dokunmadan)")
     say("Bu bölümde araç üzerindeki parçaları birbirine bağlayacaksın. Raspberry Pi bu sırada masada kendi\n"
         "şarj adaptöründe takılı kalabilir (kurulumu o yüzden yaptık). Pi'ye KABLO TAKMAYACAĞIZ.\n"
@@ -95,37 +247,14 @@ def a_kablo_robot():
         if not ask_yn("Yaptın mı?", "e"):
             return False
 
-    say("\n--- 3) BİP TESTİ (kısa devre kontrolü) ---", "b")
-    say("Multimetreyi BİP (süreklilik) konumuna al. Bataryanın hâlâ takılı olmadığından emin ol.\n"
-        "Bir probu GÜÇ DAĞITIM (+), diğerini GÜÇ DAĞITIM GND klemensine değdir (şalter açık/kapalı fark etmez, sigorta takılı).")
-    if not ask_yn("Multimetre BİP SESİ ÇIKARDI mı? (bip = kısa devre)", "h"):
-        pass
-    else:
-        say("Kısa devre var! Bataryayı TAKMA. Kabloları tek tek çıkararak hangisinin kısa yaptığını bul "
-            "(+ ile − uçları birbirine değiyor olabilir). Düzelttikten sonra tekrar: arac", "r")
-        return sorun("Güç dağıtımda kısa devre.")
+    if not bip_testi("3) BİP TESTİ (kısa devre kontrolü)"):
+        return False
 
     say("\n--- 4) Regülatörleri AYARLA (tek tek) ---", "b")
-    say("Şimdi bataryayı tak ve şalteri aç. Regülatörlerin çıkışına hiçbir şey bağlı OLMASIN.\n"
-        "Multimetreyi gerilim (V, düz çizgi =) konumuna al; kırmızı prob regülatör OUT+, siyah prob OUT−.\n"
-        "Regülatör üzerindeki küçük vidayı küçük tornavidayla yavaşça çevirerek ayarla.")
+    say("Şimdi bataryayı tak ve şalteri aç. Regülatörlerin çıkışına hiçbir şey bağlı OLMASIN.")
     if not ask_yn("Batarya takıldı, şalter açık, çıkışlar boşta. Hazır mısın?"):
         return False
-    b = ask_float("Önce BATARYA geriliminin (dağıtım + ile GND arası)", 10.5, 12.7, "batarya_V",
-                  "10,5 V altı: 3S bataryayı şarj et. 12,7 V üstü: bu 3S değil ya da bataryada sorun var, kullanma.")
-    if b is None:
-        return False
-    m = ask_float("MOTOR BUCK çıkışını 6,0 V yapacak şekilde ayarla. Ölçtüğün gerilim", 5.8, 6.2, "motor_regulator_V",
-                  "Vidayı çevirip 6,0 V'a getir; 6,2 V üstüne ÇIKMA (N20 motorlar 6 V'luktur).")
-    if m is None:
-        return False
-    pdc = ask_float("Pi DC-DC çıkışını (5,0–5,2 V) ölç ve yaz", 5.0, 5.2, "pi_dcdc_V",
-                    "Ayarlanabilir değilse bu modül uygun değildir: öğretmene haber ver.")
-    if pdc is None:
-        return False
-    mp = ask_float("MP1584EN çıkışını 5,00 V yapacak şekilde ayarla. Ölçtüğün gerilim", 4.95, 5.10, "mp1584_V",
-                   "LiDAR için 4,9–5,2 V gerekir; hedef 5,00 V. Vidayı çevirerek ayarla.")
-    if mp is None:
+    if olc_batarya() is None or not regulatorleri_ayarla():
         return False
     say("\nŞimdi ŞALTERİ KAPAT ve bataryayı ÇIKAR.", "y")
     if not ask_yn("Şalter kapalı ve batarya çıkarıldı mı?"):
@@ -197,13 +326,21 @@ def a_kablo_pi():
     for ad, pin in rows:
         say(f"   {ad:<44} →  Pi fiziksel pin {pin}")
     say("\nBu tablo bir daha lazım olursa:  arac kablo", "b")
-    say("\nSıra: ÖNCE GND pinleri, SONRA sinyal kabloları, EN SON güç kabloları (3,3 V) takılır.", "y")
+    hazir = HAZIR.exists()
+    if hazir:
+        say("\nKablolar zaten takılı. Tablodaki HER satırı bir arkadaşınla kontrol et: biri satırı okur,\n"
+            "diğeri kabloyu iki ucuna kadar takip edip pin numarasını sayar. Yanlış olan kabloyu Pi KAPALIYKEN düzelt.", "y")
+        say("Özellikle: sağ motor BIN1/BIN2 = pin 38/40, sağ enkoder A/B = pin 16/18, STBY = pin 37.", "y")
+    else:
+        say("\nSıra: ÖNCE GND pinleri, SONRA sinyal kabloları, EN SON güç kabloları (3,3 V) takılır.", "y")
     if not ask_yn("Tabloyu inceledin ve fotoğrafını çektin / ekranı açık bıraktın mı? Pi'yi şimdi kapatacağız."):
         return False
     say("\nPi kapanacak. Kapanınca (yeşil ışık söner, 10 sn bekle) şunları yap:", "y")
     say("  1) Pi'nin DUVAR ŞARJ ADAPTÖRÜNÜ ÇEK. (Pi'ye aynı anda İKİ güç kaynağı bağlanmaz!)\n"
-        "  2) Yukarıdaki pin tablosuna göre kabloları tak (önce GND, sonra sinyal, en son 3,3 V).\n"
-        "  3) LiDAR USB kablosunu Pi'nin USB portuna tak (adaptör harici 5V ile beslenir, USB sadece veri).\n"
+        + ("  2) Yukarıdaki tabloya göre kontrol ettiğin YANLIŞ kabloları düzelt (önce GND, sonra sinyal, en son 3,3 V).\n"
+           if hazir else
+           "  2) Yukarıdaki pin tablosuna göre kabloları tak (önce GND, sonra sinyal, en son 3,3 V).\n")
+        + "  3) LiDAR USB kablosunu Pi'nin USB portuna tak (LiDAR MP1584EN'den beslenir, USB sadece veri).\n"
         "  4) Pi DC-DC'nin USB-C kablosunu Pi'nin güç girişine tak.\n"
         "  5) Her telin iki ucunu tabloya göre BİR ARKADAŞINLA birlikte kontrol et (biri okur, diğeri bakar).\n"
         "  6) Tekerlekleri HAVAYA kaldır (araç sehpada).\n"
@@ -234,7 +371,33 @@ def a_guc_dogrula():
     if not ok:
         return sorun("Güç yetersiz (throttled ≠ 0x0): Pi DC-DC çıkışı, USB-C kablosu, bağlantıları kontrol et; 'arac acil' → B1.")
     say("   ✓ Güç sağlıklı", "g")
+    otomatik_kontrol()
+    HAZIR.unlink(missing_ok=True)
     return True
+
+
+def otomatik_kontrol():
+    """Pi'nin kendisinin görebildiği bağlantılar. Sorun = uyarı (sonraki adımlar ayrıntılı test eder)."""
+    say("\nOtomatik donanım kontrolü:", "b")
+    p = pins()
+    port = Path(p["lidar"]["port"])
+    if port.exists():
+        say(f"   ✓ LiDAR USB adaptörü görünüyor ({port})", "g")
+    else:
+        say(f"   ! LiDAR USB adaptörü görünmüyor ({port} yok): USB kablosu Pi'ye takılı mı? (LiDAR adımında tekrar bakılacak)", "y")
+    imu = p.get("imu")
+    if imu:
+        try:
+            out = subprocess.run(["i2cdetect", "-y", str(imu["i2c_bus"])], capture_output=True, text=True,
+                                 timeout=10).stdout
+            adr = f"{int(imu['address']):02x}"
+            if any(adr in ln.split()[1:] for ln in out.splitlines()[1:]):
+                say(f"   ✓ BNO055 I2C'de görünüyor (0x{adr})", "g")
+            else:
+                say(f"   ! BNO055 görünmüyor (0x{adr}): SDA pin 3, SCL pin 5, VIN 3,3 V, GND kontrol et. "
+                    "(Şu an yazılım kullanmıyor, devam edilebilir.)", "y")
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            say("   ! i2cdetect çalışmadı (i2c-tools kurulu mu? I2C açık mı?), BNO055 atlandı", "y")
 
 
 def tablo_goster():
