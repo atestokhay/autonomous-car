@@ -1,6 +1,6 @@
 from .encoder import Encoder
 from .gpio_backend import LgpioBackend, resolve_gpiochip
-from .motor import Motor
+from .motor import Motor, Standby
 from .sim import SimEncoder, SimMotor, SimPlant
 
 
@@ -15,19 +15,26 @@ def make_hardware(cfg, sides, mock=False):
         return None, parts
     pins = cfg["pins"]
     gpio = LgpioBackend(resolve_gpiochip(pins["gpiochip"]))
+    stby = Standby(gpio, pins["driver"]["stby"])  # TB6612FNG: STBY LOW iken motorlar dönmez
     for s in sides:
         m, e = pins["motors"][s], pins["encoders"][s]
         parts[s] = {
             "motor": Motor(gpio, m["pwm"], m["in1"], m["in2"], pins["pwm_hz"], m["invert"]),
             "encoder": Encoder(gpio, e["a"], e["b"], e["invert"], pins["encoder_pull_up"]),
             "plant": None,
+            "standby": stby,
         }
+    stby.enable()  # yön/PWM pinleri 0'da hazırlandıktan SONRA sürücüyü aç
     return gpio, parts
 
 
 def close_hardware(gpio, parts):
     for p in parts.values():
         p["motor"].stop()
+    for p in parts.values():
+        if p.get("standby"):
+            p["standby"].disable()
+            break
     if gpio is not None:
         gpio.close()
 

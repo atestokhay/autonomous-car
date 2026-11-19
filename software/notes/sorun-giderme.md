@@ -17,11 +17,11 @@
 ## Aşama 2 — Motor
 | Belirti | Kontrol |
 |---|---|
-| Motor hiç dönmüyor | Motor hattı gücü açık mı (12 V regülatör çıkışı)? L298N'de IN1/IN2 kabloları doğru GPIO'ya mı (`pins.yaml`)? ENA jumper'ı çıkarılmış ve PWM pini ENA'ya bağlı mı? GND ortak mı? |
+| Motor hiç dönmüyor | Motor hattı gücü açık mı (6 V buck çıkışı → TB6612 VM)? TB6612 VCC'de 3,3 V var mı? STBY (GPIO26, pin 37) bağlı mı? PWM/IN kabloları doğru GPIO'ya mı (`pins.yaml`)? GND ortak mı? |
 | Düşük duty'de dönmüyor, yüksekte dönüyor | Normal (ölü bölge); aşama 4 ölçer |
 | Tekerlek ters yönde | `pins.yaml` → o motorun `invert` değerini çevir |
 | Biri dönüyor, diğeri dönmüyor | Hangisi? Kabloyu diğer sürücüye takıp dene; sorun sürücüde mi motorda mı anla |
-| L298N çok ısınıyor | Duty düşük tut; ısınma L298N'de normaldir ama dokunamayacak kadar sıcaksa durdur; besleme gerilimi/motor kilitli mi |
+| TB6612 çok ısınıyor | TB6612 normalde ılık kalır; ısınıyorsa motor kilitli/sıkışık ya da akım kanal başı ~1,2 A'i aşıyor. Duty düşür, durdur, kontrol et |
 | Pi resetleniyor | Motor çalışınca batarya gerilimi çöküyor: batarya şarjı, kablo, regülatör akım limiti |
 
 ## Aşama 3 — Enkoder
@@ -31,7 +31,7 @@
 | Sayı **azalıyor** (ileri komutta) | `pins.yaml` → o enkoderin `invert` değerini çevir |
 | Tekerlek başına tick yok/değişken | A ve B kanallarından biri bağlı değil olabilir: `watch` çıktısında yalnız bir kanalın değiştiğini gör |
 | `eksik` değeri artıyor | Kenarlar kaçıyor: kabloyu kısalt/ekranla, hızı düşür, CPU yükü (`top`); sürerse C++ gerekir |
-| `ticks_per_rev` ≈ 392'den çok farklı | Tekerleği tam 1 tur elle çevirdin mi? Dişli oranı farklı olabilir; ölçülen değeri `robot.yaml`'a yaz |
+| `ticks_per_rev` iki tekerlekte farklı | Tekerleği tam 10 tur elle çevirdin mi? N20'de değer 28 × dişli oranıdır (1:100 → 2800); iki motorun dişli oranı aynı mı? |
 
 ## Aşama 4 — PID
 | Belirti | Kontrol |

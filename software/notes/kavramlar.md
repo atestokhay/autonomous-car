@@ -1,8 +1,8 @@
 # Kavramlar (kısa sözlük)
 
 - **PWM / duty:** Motora giden gücü açıp kapayarak ayarlamak. Duty 0,5 = zamanın yarısı açık ≈ yarım güç.
-- **L298N:** Motor sürücü. IN1/IN2 yönü, ENA'ya (PWM) güç seviyesini belirler. Her motora ayrı sürücü kullanıyoruz.
-- **Enkoder:** Motor milinde dönmeyi sayan sensör. A/B iki kanalı hem hız hem yön verir. `ticks_per_rev`: tekerlek bir turda kaç sayım üretir (392).
+- **TB6612FNG:** İki kanallı motor sürücü (A = sol, B = sağ). IN1/IN2 yönü, PWM güç seviyesini belirler. STBY pini HIGH olmadan motorlar dönmez.
+- **Enkoder:** Motor milinde dönmeyi sayan sensör. A/B iki kanalı hem hız hem yön verir. `ticks_per_rev`: tekerlek bir turda kaç sayım üretir (N20'de 28 × dişli oranı; aşama 3'te ölçülür).
 - **PID:** Hedef hıza ulaşmak için hatayı (hedef − ölçülen) düzelten denetleyici. **P** şimdiki hataya, **I** biriken hataya, **D** hatanın değişimine tepki verir. Bizde ayrıca **feedforward** (kff) var: hedefe uygun gücü baştan verir.
 - **Ölü bölge (deadband):** Motorun dönmeye başlaması için gereken minimum güç.
 - **Autotune:** Kodun motoru deneyip PID değerlerini kendi bulması.

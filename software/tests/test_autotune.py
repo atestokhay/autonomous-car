@@ -54,8 +54,12 @@ class AutotuneTest(unittest.TestCase):
 
     def test_wrong_ticks_warns(self):
         # gerçekte 392 tick/tur ama config 98 sanılırsa: hız 4x büyük görünür
-        r = autotune_side(rig_for(SimPlant(TICKS)), 98, PC, log=lambda *_: None)
+        r = autotune_side(rig_for(SimPlant(TICKS)), 98, PC, log=lambda *_: None, nominal_rpm=330)
         self.assertTrue(r["warnings"])
+
+    def test_right_ticks_no_warning_with_nominal(self):
+        r = autotune_side(rig_for(SimPlant(TICKS)), TICKS, PC, log=lambda *_: None, nominal_rpm=330)
+        self.assertEqual(r["warnings"], [])
 
     def test_tuning_math(self):
         pts = [(0.2, 3.7), (0.4, 11.1), (0.6, 18.5), (0.8, 25.9)]

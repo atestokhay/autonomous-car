@@ -99,7 +99,9 @@ def passed(m, hold):
     return m["overshoot_pct"] <= 8.0 and m["ss_err_pct"] <= 3.0 and m["settle_s"] <= 0.6 * hold
 
 
-def autotune_side(rig, ticks, pc, log=print, hold=2.5, lam_factor=2.5, lam_min=0.18, max_tries=3):
+def autotune_side(rig, ticks, pc, log=print, hold=2.5, lam_factor=2.5, lam_min=0.18, max_tries=3,
+                  nominal_rpm=None):
+    """nominal_rpm: motor etiketindeki boşta devir (robot.yaml). Verilmişse ölçülen hız onunla karşılaştırılır."""
     log("1/3 Açık çevrim süpürme (kff, ölü bölge)")
     pts = sweep(rig, ticks, log)
     model = tuning.model_from_sweep(pts)
@@ -107,8 +109,9 @@ def autotune_side(rig, ticks, pc, log=print, hold=2.5, lam_factor=2.5, lam_min=0
         raise RuntimeError("Model çıkarılamadı: motor dönmüyor veya enkoder saymıyor (bağlantıyı kontrol et)")
     warnings = []
     rpm_hi = pts[-1][1] * 60 / TWO_PI
-    if not 150 <= rpm_hi <= 450:
-        warnings.append(f"duty 0.85'te {rpm_hi:.0f} RPM: beklenen ~250-380. "
+    if nominal_rpm and not 0.4 * nominal_rpm <= rpm_hi <= 1.3 * nominal_rpm:
+        warnings.append(f"duty 0.85'te {rpm_hi:.0f} RPM: motor etiketi {nominal_rpm:.0f} RPM "
+                        f"(beklenen ~{0.5 * nominal_rpm:.0f}-{1.1 * nominal_rpm:.0f}). "
                         "ticks_per_rev (robot.yaml) veya enkoder çözümü yanlış olabilir.")
     log("2/3 Basamak cevabı (zaman sabiti)")
     tau, w_ss = step_response(rig, ticks, 0.6)

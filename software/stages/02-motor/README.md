@@ -15,7 +15,7 @@ Her yön için Enter beklenir. Duty en fazla 0.6 kabul edilir.
 ## Bitti sayılır
 - Sol ve sağ tekerlek ileri komutunda ileri, geri komutunda geri dönüyor.
 - Düşük duty'de (0.2–0.3) hangisi hiç dönmüyor not et (aşama 4'te ölü bölge olarak ölçülecek).
-- Motor durma komutunda duruyor, L298N ısınmıyor.
+- Motor durma komutunda duruyor, TB6612 ısınmıyor.
 
 ## Olası sorunlar
 → `notes/sorun-giderme.md` ("Aşama 2" bölümü)

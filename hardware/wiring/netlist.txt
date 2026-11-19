@@ -7,154 +7,150 @@ KAYNAK -> HEDEF
 Notlar:
 - Enerji vermeden once polarite ve kisa devre kontrolu yap.
 - Pi GPIO sinyalleri 3.3 V'u asmamalidir.
-- 4S LiPo motorlara dogrudan baglanmamalidir.
+- 3S LiPo motorlara / TB6612 VM girisine dogrudan baglanmamalidir.
 - LIDAR gucu Pi'nin USB 5 V hattindan alinmaz.
+- Pin numaralari software/config/pins.yaml ile birebir aynidir.
 
 
 ============================================================
 1. BATARYA VE ANA DAGITIM
 ============================================================
 
-BATTERY_PLUS
+BATTERY_3S_PLUS
+  -> MAIN_FUSE_10A_INPUT
+
+MAIN_FUSE_10A_OUTPUT
   -> MAIN_SWITCH_INPUT
 
 MAIN_SWITCH_OUTPUT
-  -> MAIN_FUSE_INPUT
+  -> BUS_11V1_POSITIVE
 
-MAIN_FUSE_OUTPUT
-  -> POWER_DISTRIBUTION_POSITIVE
-
-BATTERY_MINUS
-  -> POWER_DISTRIBUTION_GROUND
+BATTERY_3S_MINUS
+  -> BUS_GROUND
 
 
 ============================================================
-2. MOTOR BESLEME KOLU
+2. MOTOR BESLEME KOLU (6 V)
 ============================================================
 
-POWER_DISTRIBUTION_POSITIVE
-  -> MOTOR_REGULATOR_INPUT_POSITIVE
+BUS_11V1_POSITIVE
+  -> MOTOR_BUCK_IN_PLUS
 
-POWER_DISTRIBUTION_GROUND
-  -> MOTOR_REGULATOR_INPUT_GROUND
+BUS_GROUND
+  -> MOTOR_BUCK_IN_MINUS
 
-MOTOR_REGULATOR_OUTPUT_12V
-  -> LEFT_L298N_MOTOR_SUPPLY
+MOTOR_BUCK_OUT_PLUS_6V
+  -> TB6612_VM
 
-MOTOR_REGULATOR_OUTPUT_12V
-  -> RIGHT_L298N_MOTOR_SUPPLY
+MOTOR_BUCK_OUT_MINUS
+  -> TB6612_GND_POWER
 
-MOTOR_REGULATOR_OUTPUT_GROUND
-  -> COMMON_GROUND
+MOTOR_BUCK_OUT_MINUS
+  -> BUS_GROUND            # kisa ve kalin kablo: motor donus akimi bu yoldan doner
 
-# Motor besleme cikisi 12 V nominal motorlara uygun olmalidir.
-# Regulator iki motorun gerekli akimini karsilamalidir.
-# 4S LiPo dogrudan L298N motor besleme girislerine baglanmaz.
+# Buck cikisi 5.8-6.2 V (hedef 6.0 V), en az 5 A.
+# N20 motorlar 6 V'luk; 3S LiPo (12.6 V'a kadar) dogrudan VM'ye baglanmaz.
 
 
 ============================================================
 3. RASPBERRY PI 5 BESLEME KOLU
 ============================================================
 
-POWER_DISTRIBUTION_POSITIVE
-  -> PI_REGULATOR_INPUT_POSITIVE
+BUS_11V1_POSITIVE
+  -> PI_USBC_DCDC_IN_PLUS
 
-POWER_DISTRIBUTION_GROUND
-  -> PI_REGULATOR_INPUT_GROUND
+BUS_GROUND
+  -> PI_USBC_DCDC_IN_MINUS
 
-PI_REGULATOR_OUTPUT_5V
+PI_USBC_DCDC_USB_C_OUTPUT
   -> RASPBERRY_PI_5_USB_C_POWER_INPUT
 
-PI_REGULATOR_OUTPUT_GROUND
-  -> COMMON_GROUND
-
-RASPBERRY_PI_GND
-  -> COMMON_GROUND
-
-# Pi regulatoru 5 V / 5 A hedefini desteklemelidir.
-# USB-C kablo ve regulator kapasitesi dikkate alinmalidir.
+# DC-DC 5 V / 5 A. Pi ayni anda ikinci bir guc kaynagina baglanmaz.
 
 
 ============================================================
-4. RPLIDAR S3 BESLEME KOLU
+4. RPLIDAR S3 BESLEME VE VERI
 ============================================================
 
-POWER_DISTRIBUTION_POSITIVE
-  -> LIDAR_MP1584_INPUT_POSITIVE
+BUS_11V1_POSITIVE
+  -> LIDAR_MP1584EN_IN_PLUS
 
-POWER_DISTRIBUTION_GROUND
-  -> LIDAR_MP1584_INPUT_GROUND
+BUS_GROUND
+  -> LIDAR_MP1584EN_IN_MINUS
 
-LIDAR_MP1584_OUTPUT_5V
-  -> RPLIDAR_USB_ADAPTER_EXTERNAL_5V_INPUT
+LIDAR_MP1584EN_OUT_PLUS_5V
+  -> RPLIDAR_S3_5V
 
-LIDAR_MP1584_OUTPUT_GROUND
-  -> RPLIDAR_USB_ADAPTER_EXTERNAL_GROUND
+LIDAR_MP1584EN_OUT_MINUS
+  -> RPLIDAR_S3_GND
 
-RPLIDAR_USB_ADAPTER_USB_DATA
-  -> RASPBERRY_PI_5_USB_PORT
+RPLIDAR_S3_DATA
+  -> RPLIDAR_USB_ADAPTER
 
-# LiDAR beslemesi MP1584EN buck converter uzerinden gelir.
-# Hedef: yaklasik 5.00 V; izin verilen aralik 4.9-5.2 V.
-# Baslangic akimi yaklasik 1.2 A oldugundan yeterli kapasite gerekir.
-# USB VBUS ile harici 5 V hatti birbirini geri beslememelidir.
-# Raspberry Pi USB portu LiDAR guc kaynagi olarak kullanilmaz.
+RPLIDAR_USB_ADAPTER_USB
+  -> RASPBERRY_PI_5_USB_A_PORT
+
+# Hedef 5.00 V; izin verilen aralik 4.9-5.2 V. Baslangic akimi ~1.2 A.
+# Adapterin USB 5 V'u LiDAR'a ayrica gidiyorsa MP1584EN ile paralel olur: harici
+# guc secenegi kullanilir, USB VBUS ile harici 5 V birbirini geri beslememelidir.
 
 
 ============================================================
-5. SOL L298N VE SOL MOTOR
+5. TB6612FNG LOJIK BAGLANTILARI
 ============================================================
 
 RASPBERRY_PI_GPIO12_PHYSICAL_32
-  -> LEFT_L298N_ENA
+  -> TB6612_PWMA
 
 RASPBERRY_PI_GPIO5_PHYSICAL_29
-  -> LEFT_L298N_IN1
+  -> TB6612_AIN1
 
 RASPBERRY_PI_GPIO6_PHYSICAL_31
-  -> LEFT_L298N_IN2
-
-LEFT_L298N_OUT1
-  -> LEFT_MOTOR_TERMINAL_A
-
-LEFT_L298N_OUT2
-  -> LEFT_MOTOR_TERMINAL_B
-
-LEFT_L298N_GND
-  -> COMMON_GROUND
-
-# ENA jumperi PWM kontrolu icin cikarilir.
-# 5V-EN jumperi kullanilan kartin dogrulanmis duzenine gore ayarlanir.
-
-
-============================================================
-6. SAG L298N VE SAG MOTOR
-============================================================
+  -> TB6612_AIN2
 
 RASPBERRY_PI_GPIO13_PHYSICAL_33
-  -> RIGHT_L298N_ENA
-
-RASPBERRY_PI_GPIO16_PHYSICAL_36
-  -> RIGHT_L298N_IN1
+  -> TB6612_PWMB
 
 RASPBERRY_PI_GPIO20_PHYSICAL_38
-  -> RIGHT_L298N_IN2
+  -> TB6612_BIN1
 
-RIGHT_L298N_OUT1
-  -> RIGHT_MOTOR_TERMINAL_A
+RASPBERRY_PI_GPIO21_PHYSICAL_40
+  -> TB6612_BIN2
 
-RIGHT_L298N_OUT2
-  -> RIGHT_MOTOR_TERMINAL_B
+RASPBERRY_PI_GPIO26_PHYSICAL_37
+  -> TB6612_STBY
 
-RIGHT_L298N_GND
-  -> COMMON_GROUND
+RASPBERRY_PI_3V3_PHYSICAL_1
+  -> TB6612_VCC
 
-# ENA jumperi PWM kontrolu icin cikarilir.
-# 5V-EN jumperi kullanilan kartin dogrulanmis duzenine gore ayarlanir.
+RASPBERRY_PI_GND_PHYSICAL_6
+  -> TB6612_GND_LOGIC
+
+# STBY LOW = surucu kapali. Yazilim acilista HIGH, kapanista LOW yapar.
+# TB6612 VCC 3.3 V'tur; VM (6 V) ile karistirilmamalidir.
 
 
 ============================================================
-7. SOL MOTOR ENKODERI
+6. MOTOR CIKISLARI
+============================================================
+
+TB6612_AO1
+  -> LEFT_MOTOR_M_PLUS
+
+TB6612_AO2
+  -> LEFT_MOTOR_M_MINUS
+
+TB6612_BO1
+  -> RIGHT_MOTOR_M_PLUS
+
+TB6612_BO2
+  -> RIGHT_MOTOR_M_MINUS
+
+# Yon ters cikarsa kablo degil pins.yaml'daki invert degistirilir.
+
+
+============================================================
+7. SOL MOTOR ENKODERI (N20)
 ============================================================
 
 LEFT_ENCODER_A
@@ -164,87 +160,91 @@ LEFT_ENCODER_B
   -> RASPBERRY_PI_GPIO27_PHYSICAL_13
 
 LEFT_ENCODER_VCC
-  -> VERIFIED_ENCODER_SUPPLY
+  -> LOGIC_3V3_LINE
 
 LEFT_ENCODER_GND
-  -> COMMON_GROUND
+  -> LOGIC_GND_LINE
 
 
 ============================================================
-8. SAG MOTOR ENKODERI
+8. SAG MOTOR ENKODERI (N20)
 ============================================================
 
 RIGHT_ENCODER_A
-  -> RASPBERRY_PI_GPIO22_PHYSICAL_15
-
-RIGHT_ENCODER_B
   -> RASPBERRY_PI_GPIO23_PHYSICAL_16
 
+RIGHT_ENCODER_B
+  -> RASPBERRY_PI_GPIO24_PHYSICAL_18
+
 RIGHT_ENCODER_VCC
-  -> VERIFIED_ENCODER_SUPPLY
+  -> LOGIC_3V3_LINE
 
 RIGHT_ENCODER_GND
-  -> COMMON_GROUND
+  -> LOGIC_GND_LINE
 
-# Encoder beslemesi motorun encoder dokumaniyla uyumlu olmalidir.
-# Pi GPIO pinlerine gelen lojik sinyal 3.3 V'u asmamalidir.
-# Gerekirse uygun lojik seviye donusturucu kullanilir.
-
-
-============================================================
-9. ORTAK TOPRAK
-============================================================
-
-BATTERY_MINUS
-  -> POWER_DISTRIBUTION_GROUND
-
-POWER_DISTRIBUTION_GROUND
-  -> PI_REGULATOR_INPUT_GROUND
-
-POWER_DISTRIBUTION_GROUND
-  -> MOTOR_REGULATOR_INPUT_GROUND
-
-POWER_DISTRIBUTION_GROUND
-  -> LIDAR_MP1584_INPUT_GROUND
-
-PI_REGULATOR_OUTPUT_GROUND
-  -> COMMON_GROUND
-
-MOTOR_REGULATOR_OUTPUT_GROUND
-  -> COMMON_GROUND
-
-LIDAR_MP1584_OUTPUT_GROUND
-  -> COMMON_GROUND
-
-LEFT_L298N_GND
-  -> COMMON_GROUND
-
-RIGHT_L298N_GND
-  -> COMMON_GROUND
-
-RASPBERRY_PI_GND
-  -> COMMON_GROUND
-
-LEFT_ENCODER_GND
-  -> COMMON_GROUND
-
-RIGHT_ENCODER_GND
-  -> COMMON_GROUND
+# Enkoder 3.3 V ile beslenir; cikislari 3.3 V'u asmaz.
+# Tekerlek turu basina tick = 28 x disli orani (asama 3'te olculur).
 
 
 ============================================================
-10. ENERJI VERME ONCESI KONTROL
+9. BNO055 IMU (I2C, 0x28)
 ============================================================
 
-[ ] Batarya polaritesi dogrulandi.
-[ ] Ana sigorta uygun secildi.
-[ ] Motor regulatoru cikisi olculdu.
-[ ] Pi regulatoru cikisi olculdu.
-[ ] MP1584EN cikisi olculdu.
+RASPBERRY_PI_GPIO2_SDA_PHYSICAL_3
+  -> BNO055_SDA
+
+RASPBERRY_PI_GPIO3_SCL_PHYSICAL_5
+  -> BNO055_SCL
+
+BNO055_VIN
+  -> LOGIC_3V3_LINE
+
+BNO055_GND
+  -> LOGIC_GND_LINE
+
+# Su an yazilimda kullanilmiyor.
+
+
+============================================================
+10. LOJIK HATLAR VE TOPRAK
+============================================================
+
+RASPBERRY_PI_3V3_PHYSICAL_17
+  -> LOGIC_3V3_LINE
+
+RASPBERRY_PI_GND_PHYSICAL_14
+  -> LOGIC_GND_LINE
+
+BATTERY_3S_MINUS
+  -> BUS_GROUND
+
+BUS_GROUND
+  -> MOTOR_BUCK_IN_MINUS
+  -> PI_USBC_DCDC_IN_MINUS
+  -> LIDAR_MP1584EN_IN_MINUS
+  -> MOTOR_BUCK_OUT_MINUS
+
+RASPBERRY_PI_GND (orn. PHYSICAL_39)
+  -> BUS_GROUND            # onerilen tek referans baglantisi (yildiz nokta)
+
+# TB6612 karti icinde VM GND ve lojik GND ortaktir: motor akimi Pi'nin ince
+# GND kablolarindan donmemeli, MOTOR_BUCK_OUT_MINUS -> BUS_GROUND kalin olmali.
+
+
+============================================================
+11. ENERJI VERME ONCESI KONTROL
+============================================================
+
+[ ] Batarya 3S ve polaritesi dogrulandi (10.5-12.6 V).
+[ ] 10 A sigorta bataryaya en yakin eleman.
+[ ] Motor buck cikisi 6.0 V olculdu.
+[ ] Pi DC-DC cikisi olculdu.
+[ ] MP1584EN cikisi 5.00 V olculdu.
 [ ] LIDAR guc hatti Pi USB 5 V hattindan ayri.
 [ ] USB adaptoru ile harici 5 V arasinda geri besleme yok.
-[ ] L298N ENA ve 5V-EN duzenleri dogrulandi.
-[ ] Enkoder beslemesi ve GPIO sinyal seviyeleri dogrulandi.
-[ ] Ortak GND baglantilari kontrol edildi.
+[ ] TB6612 VCC = 3.3 V (pin 1), VM = 6 V; karismadi.
+[ ] STBY pin 37'ye bagli.
+[ ] Enkoder ve BNO055 3.3 V'tan besleniyor.
+[ ] GND bara, lojik GND ve Pi GND arasinda sureklilik var.
 [ ] Kisa devre kontrolu yapildi.
 [ ] Ilk motor testinde tekerlekler yerden kesildi.

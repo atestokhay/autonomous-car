@@ -36,7 +36,7 @@ def main():
         p = parts[s]
         rig = Rig(p["motor"], p["encoder"], p["plant"], hz=pc["loop_hz"], virtual=a.mock)
         try:
-            results[s] = autotune_side(rig, ticks, pc)
+            results[s] = autotune_side(rig, ticks, pc, nominal_rpm=cfg["robot"].get("nominal_rpm"))
             for w in results[s]["warnings"]:
                 print("  UYARI:", w)
         except KeyboardInterrupt:

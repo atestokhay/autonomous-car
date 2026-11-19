@@ -6,23 +6,25 @@ Bu klasör, otonom araç donanımının güvenli biçimde kurulması, kablolanma
 Amaç yalnızca parçaları birbirine bağlamak değil; her bağlantının neden yapıldığını anlamak, ölçüm sonuçlarını kaydetmek ve bir sonraki aşamaya geçmeden önce sistemin güvenli olduğunu doğrulamaktır.
 
 > [!CAUTION]
-> **Güç güvenliği:** Araçta 4S LiPo batarya kullanılmaktadır. Batarya nominal olarak 14,8 V, tam doluyken 16,8 V seviyesindedir. Motorlarımız 12 V sınıfındadır. Bataryayı motorlara doğrudan bağlamayın. Motor beslemesi uygun biçimde sınırlandırılmalıdır; PWM kullanılması aşırı besleme gerilimini güvenli hâle getirmez.
+> **Güç güvenliği:** Araçta 3S LiPo batarya kullanılmaktadır. Batarya nominal olarak 11,1 V, tam doluyken 12,6 V seviyesindedir. Motorlarımız 6 V'luk N20 motorlardır. Bataryayı motorlara veya TB6612 VM girişine doğrudan bağlamayın; motorlar 6,0 V buck regülatörden beslenir. PWM kullanılması aşırı besleme gerilimini güvenli hâle getirmez.
 
 > [!WARNING]
-> İlk enerjilendirme sırasında araç sabitlenmeli, tekerlekler yerden kesilmeli ve acil güç kesme yöntemi hazır olmalıdır. Duman, yanık kokusu, olağan dışı ısınma veya batarya hasarı görülürse testi durdurun ve `docs/emergency.md` prosedürünü uygulayın.
+> İlk enerjilendirme sırasında araç sabitlenmeli, tekerlekler yerden kesilmeli ve acil güç kesme yöntemi hazır olmalıdır. Duman, yanık kokusu, olağan dışı ısınma veya batarya hasarı görülürse testi durdurun ve [`software/docs/acil-durum.md`](../software/docs/acil-durum.md) prosedürünü uygulayın.
 
 ## 1. Donanım bileşenleri
 
 | Bileşen | Adet | Görev |
 |---|---:|---|
 | Raspberry Pi 5 | 1 | Ana bilgisayar ve kontrol |
-| JSumo 12 V 430 RPM enkoderli DC motor | 2 | Tahrik sistemi |
-| L298N motor sürücü modülü | 2 | Motor yönü ve PWM kontrolü |
-| RPLIDAR S3 | 1 | Lazer tabanlı mesafe algılama |
-| 4S LiPo batarya, 14,8 V nominal | 1 | Ana güç kaynağı |
-| MP1584EN buck regülatör | 1 | LiDAR için ayarlanabilir besleme |
-| 6–24 V → 5 V USB-C DC-DC dönüştürücü | 1 | Raspberry Pi beslemesi |
-| Ana şalter ve uygun DC sigorta | 1'er | Güç kesme ve aşırı akım koruması |
+| N20 6 V enkoderli DC motor | 2 | Tahrik sistemi |
+| TB6612FNG çift kanallı motor sürücü | 1 | Motor yönü ve PWM kontrolü (A = sol, B = sağ) |
+| RPLIDAR S3 + USB adaptörü | 1 | Lazer tabanlı mesafe algılama |
+| BNO055 9 eksen IMU | 1 | Yönelim ölçümü (I2C, şu an yazılımda kullanılmıyor) |
+| 3S LiPo batarya, 11,1 V nominal | 1 | Ana güç kaynağı |
+| Buck regülatör, 6,0 V / en az 5 A | 1 | Motor beslemesi |
+| MP1584EN buck regülatör | 1 | LiDAR için 5,0 V besleme |
+| 6–24 V → 5 V / 5 A USB-C DC-DC dönüştürücü | 1 | Raspberry Pi beslemesi |
+| Ana şalter ve 10 A DC sigorta | 1'er | Güç kesme ve aşırı akım koruması |
 | Güç dağıtım klemensleri | İhtiyaca göre | Güç hatlarının dağıtımı |
 | Kablo, konektör ve bağlantı elemanları | İhtiyaca göre | Elektriksel ve mekanik bağlantılar |
 
@@ -33,45 +35,43 @@ Parça listesi, kullanılan modüllerin tam modeline ve elektriksel özellikleri
 ### Güç dağıtımı
 
 ```text
-4S LiPo Batarya (+)
+3S LiPo Batarya (+)
+        |
+        v
+  10 A DC Sigorta
         |
         v
     Ana Şalter
         |
         v
-    DC Sigorta
+  +11,1 V Bara
         |
-        v
-  Güç Dağıtım Noktası
-        |
-        +----> Motor besleme yolu
+        +----> Buck regülatör (6,0 V)
         |        |
-        |        +----> Sol L298N
-        |        +----> Sağ L298N
+        |        +----> TB6612FNG VM ----> Sol / Sağ N20 motor
         |
         +----> 5 V USB-C DC-DC
         |        |
         |        +----> Raspberry Pi 5
         |
-        +----> MP1584EN
+        +----> MP1584EN (5,0 V)
                  |
-                 +----> LiDAR adaptörünün
-                        doğrulanmış güç girişi
+                 +----> RPLIDAR S3 5V / GND
 ```
 
-Negatif güç dönüşleri, uygun kablo kesitleri kullanılarak ortak bir yıldız GND noktasında birleştirilmelidir. Motorların yüksek akımlı dönüş yolu Raspberry Pi'nin ince GND kablolarından geçirilmemelidir.
+Negatif güç dönüşleri GND barasında birleşir. TB6612 kartında motor GND'si ile lojik GND içeriden ortak olduğu için motor buck OUT− ile GND bara arasında kısa ve kalın bir kablo bulunmalıdır; motorların dönüş akımı Raspberry Pi'nin ince GND kablolarından geçirilmemelidir.
 
 **Önemli:** Bu çizim kavramsal güç mimarisidir. Gerçek bağlantılar, kullanılan modüllerin pin etiketleri ve üretici şemaları doğrulandıktan sonra yapılmalıdır.
 
 ### Motor beslemesi
 
-L298N entegresinin belirli yüksek gerilimlere dayanabilmesi, bağlı motorların aynı gerilimde güvenle çalışacağı anlamına gelmez. Kullanılan 12 V motorlar için uygun gerilim sınırlandırması yapılmalı ve besleme yük altında ölçülmelidir.
+TB6612FNG'nin VM girişi 13,5 V'a kadar dayanır, ama N20 motorlar 6 V'luktur; bu yüzden VM'ye batarya değil 6,0 V buck çıkışı bağlanır. Buck çıkışı yük bağlanmadan önce ayarlanmalı ve motorlar dönerken tekrar ölçülmelidir.
 
-Motorların kalkış akımı, sürücüdeki gerilim kaybı, kablo kesiti ve regülatör kapasitesi tasarım sırasında dikkate alınmalıdır.
+TB6612FNG kanal başına yaklaşık 1,2 A sürekli, 3,2 A tepe akım verir. Seçilen N20 modelinin kilitlenme (stall) akımı bu sınırla karşılaştırılmalıdır. Sürücünün STBY pini (GPIO26) LOW iken motorlar dönmez; yazılım bu pini kendisi yönetir.
 
 ### Raspberry Pi beslemesi
 
-Raspberry Pi 5 için önerilen besleme 5 V / 5 A düzeyindedir. Kullanılacak 5 V / 3 A dönüştürücünün yeterliliği, Pi ve bağlı USB çevre birimleri birlikte çalışırken test edilmelidir.
+Raspberry Pi 5 için önerilen besleme 5 V / 5 A düzeyindedir. Kullanılan USB-C DC-DC dönüştürücü bu değeri hedefler; yeterliliği Pi ve bağlı USB çevre birimleri birlikte çalışırken `vcgencmd get_throttled` ile test edilmelidir.
 
 Raspberry Pi aynı anda iki ayrı USB-C güç kaynağına bağlanmamalıdır.
 
@@ -79,7 +79,7 @@ Raspberry Pi aynı anda iki ayrı USB-C güç kaynağına bağlanmamalıdır.
 
 RPLIDAR S3 için üretici tarafından belirtilen besleme aralığı 4,9–5,2 V'tur. Besleme devresi, cihazın başlangıç akımını da karşılayabilmelidir.
 
-MP1584EN çıkışı LiDAR bağlanmadan önce ayarlanmalı ve ölçülmelidir. LiDAR adaptörünün güç pinleri doğrulanmadan herhangi bir pine harici gerilim uygulanmamalıdır.
+MP1584EN çıkışı LiDAR bağlanmadan önce ayarlanmalı ve ölçülmelidir. LiDAR'ın veri hattı USB adaptörü üzerinden Pi'ye gider. Adaptör kendi USB 5 V'unu da LiDAR'a veriyorsa MP1584EN ile paralel iki kaynak oluşur; bunun olmadığı doğrulanmalıdır.
 
 ## 3. GPIO ve bağlantı referansı
 
@@ -87,21 +87,28 @@ Yazılım tarafında BCM GPIO numaraları kullanılacaktır. Fiziksel pin numara
 
 | İşlev | BCM GPIO | Fiziksel pin |
 |---|---:|---:|
-| Sol motor ENA / PWM | GPIO12 | 32 |
-| Sol motor IN1 | GPIO5 | 29 |
-| Sol motor IN2 | GPIO6 | 31 |
-| Sağ motor ENA / PWM | GPIO13 | 33 |
-| Sağ motor IN1 | GPIO16 | 36 |
-| Sağ motor IN2 | GPIO20 | 38 |
+| TB6612 PWMA (sol motor hız) | GPIO12 | 32 |
+| TB6612 AIN1 (sol motor yön) | GPIO5 | 29 |
+| TB6612 AIN2 (sol motor yön) | GPIO6 | 31 |
+| TB6612 PWMB (sağ motor hız) | GPIO13 | 33 |
+| TB6612 BIN1 (sağ motor yön) | GPIO20 | 38 |
+| TB6612 BIN2 (sağ motor yön) | GPIO21 | 40 |
+| TB6612 STBY | GPIO26 | 37 |
+| TB6612 VCC | 3V3 | 1 |
+| TB6612 GND | GND | 6 |
 | Sol enkoder A | GPIO17 | 11 |
 | Sol enkoder B | GPIO27 | 13 |
-| Sağ enkoder A | GPIO22 | 15 |
-| Sağ enkoder B | GPIO23 | 16 |
+| Sağ enkoder A | GPIO23 | 16 |
+| Sağ enkoder B | GPIO24 | 18 |
+| BNO055 SDA | GPIO2 | 3 |
+| BNO055 SCL | GPIO3 | 5 |
+| Enkoder + BNO055 VCC (3,3 V lojik hattı) | 3V3 | 17 |
+| Enkoder + BNO055 GND (GND lojik hattı) | GND | 14 |
 
 Bu eşleşmeler `software/config/pins.yaml` dosyasıyla aynı tutulmalıdır.
 
 > [!CAUTION]
-> Raspberry Pi GPIO girişleri 5 V toleranslı değildir. Enkoder çıkışının lojik seviyesi, bağlantıdan önce veri sayfası ve uygun ölçüm ekipmanıyla doğrulanmalıdır. Sinyal 3,3 V'u aşabiliyorsa uygun seviye dönüştürücü kullanılmalıdır.
+> Raspberry Pi GPIO girişleri 5 V toleranslı değildir. Enkoderler ve BNO055 3,3 V'tan beslenir; enkoder kartında 5 V'a çeken bir pull-up olmadığı doğrulanmalıdır. TB6612 VCC'si de 3,3 V'tur; 6 V'luk VM ile karıştırılmamalıdır.
 
 ## 4. Montaj aşamaları
 
@@ -116,7 +123,8 @@ Bu eşleşmeler `software/config/pins.yaml` dosyasıyla aynı tutulmalıdır.
 ### Aşama 1 — Güç sisteminin doğrulanması
 
 - [ ] Ana şalter ve sigorta doğru hatta yerleştirildi.
-- [ ] Motor beslemesinin 12 V motor sınırlarına uygun olduğu doğrulandı.
+- [ ] Batarya geriliminin 3S aralığında (10,5–12,6 V) olduğu doğrulandı.
+- [ ] Motor buck çıkışı 6,0 V'a ayarlandı ve ölçüldü.
 - [ ] MP1584EN çıkışı, yükler bağlanmadan önce ölçüldü.
 - [ ] Raspberry Pi DC-DC çıkışı ölçüldü.
 - [ ] Güç kabloları ile sinyal kabloları mümkün olduğunca ayrı güzergâhlara yerleştirildi.
@@ -128,12 +136,11 @@ Bu eşleşmeler `software/config/pins.yaml` dosyasıyla aynı tutulmalıdır.
 - [ ] Sistem başlatıldı ve kararlı çalıştığı doğrulandı.
 - [ ] `vcgencmd get_throttled` çıktısı kaydedildi.
 
-### Aşama 3 — Motorlar ve L298N sürücüleri
+### Aşama 3 — Motorlar ve TB6612FNG sürücü
 
 - [ ] Araç sabitlendi ve tekerlekler yerden kesildi.
-- [ ] Her sürücüde kullanılacak A kanalı belirlendi.
-- [ ] PWM kontrolü için ENA jumper'ı çıkarıldı.
-- [ ] `5V-EN` jumper'ının işlevi kullanılan kartın şeması üzerinden doğrulandı.
+- [ ] VM = 6 V (buck), VCC = 3,3 V (pin 1) olduğu ölçüldü.
+- [ ] STBY pinin GPIO26'ya (pin 37) bağlı olduğu doğrulandı.
 - [ ] Motorlar tek tek ve düşük PWM ile test edildi.
 - [ ] Yazılımdaki ileri komutunun fiziksel ileri yönle eşleştiği doğrulandı.
 
@@ -142,7 +149,8 @@ Bu eşleşmeler `software/config/pins.yaml` dosyasıyla aynı tutulmalıdır.
 - [ ] Enkoder beslemesi ve çıkış seviyeleri doğrulandı.
 - [ ] A/B sinyalleri osiloskop veya lojik analizörle incelendi.
 - [ ] Tekerlek elle döndürülerek darbe üretimi kontrol edildi.
-- [ ] Sayım yönü ve bir tam turdaki sayım miktarı kaydedildi.
+- [ ] Sayım yönü ve bir tam turdaki sayım miktarı (`ticks_per_rev`, N20 dişli oranına bağlı) kaydedildi.
+- [ ] Motor dönerken `eksik` (kaçan kenar) sayacı 0 kaldı.
 
 ### Aşama 5 — LiDAR
 
@@ -163,12 +171,11 @@ Bu eşleşmeler `software/config/pins.yaml` dosyasıyla aynı tutulmalıdır.
 
 Detaylı ölçüm ve kabul işlemleri için:
 
-- [`docs/test_sheet.md`](docs/test_sheet.md) — Enerjisiz kontroller, regülatör ölçümleri, lojik seviye ve motor testleri.
-- [`docs/emergency.md`](docs/emergency.md) — Acil durum prosedürleri ve arıza teşhisi.
+- [`software/docs/acil-durum.md`](../software/docs/acil-durum.md) — Acil durum prosedürleri ve arıza teşhisi.
 - [`wiring/README.md`](wiring/README.md) — Kablolama, renk kodları ve bağlantı referansı.
 - [`wiring/netlist.txt`](wiring/netlist.txt) — Hızlı bağlantı listesi.
 - [`wiring/schematic.png`](wiring/schematic.png) — Görsel bağlantı şeması.
-- [`wiring/schematic.fzz`](wiring/schematic.fzz) — Fritzing proje dosyası.
+- [`wiring/schematic.fzz`](wiring/schematic.fzz) — Fritzing proje dosyası (eski 4S/L298N düzeni; güncellenmeli).
 
 Her testte ölçülen değerler ve sonuçlar kaydedilmelidir. Bir test başarısız olduğunda, neden belirlenmeden sonraki aşamaya geçilmemelidir.
 
@@ -176,8 +183,8 @@ Her testte ölçülen değerler ve sonuçlar kaydedilmelidir. Bir test başarıs
 
 - [Raspberry Pi resmi belgeleri](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html)
 - [RPLIDAR S3 veri sayfası](https://wiki.slamtec.com/download/attachments/83066883/SLAMTEC_rplidar_datasheet_S3_v1.1_en.pdf)
-- [ST L298 veri sayfası](https://www.st.com/resource/en/datasheet/cd00000240.pdf)
-- [JSumo 12 V 430 RPM enkoderli DC motor](https://www.robotsepeti.com/jsumo-12v-430rpm-enkoderli-dc-motor)
+- [Toshiba TB6612FNG veri sayfası](https://toshiba.semicon-storage.com/info/TB6612FNG_datasheet_en_20141001.pdf?did=10660&prodName=TB6612FNG)
+- [Bosch BNO055 veri sayfası](https://www.bosch-sensortec.com/products/smart-sensor-systems/bno055/)
 
 ---
 

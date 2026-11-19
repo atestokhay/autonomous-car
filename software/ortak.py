@@ -99,6 +99,17 @@ def set_robot_yaw(deg):
     f.write_text(re.sub(r"lidar_yaw_deg:\s*[-\d.]+", f"lidar_yaw_deg: {deg}", t), encoding="utf-8")
 
 
+def get_robot_ticks():
+    m = re.search(r"^ticks_per_rev:\s*(\d+)", (ROOT / "config" / "robot.yaml").read_text(encoding="utf-8"), re.M)
+    return int(m.group(1)) if m else None
+
+
+def set_robot_ticks(n):
+    f = ROOT / "config" / "robot.yaml"
+    t = f.read_text(encoding="utf-8")
+    f.write_text(re.sub(r"^ticks_per_rev:\s*\S+", f"ticks_per_rev: {int(n)}", t, flags=re.M), encoding="utf-8")
+
+
 def load_state():
     try:
         return json.loads(STATE.read_text())

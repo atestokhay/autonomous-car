@@ -3,16 +3,23 @@
 # Yön ters çıkarsa kabloyu değiştirme, ilgili satırdaki invert değerini çevir.
 
 gpiochip: auto         # auto = `gpiodetect` ile pinctrl-rp1 çipini kendisi bulur. Bulamazsa sayı yaz (ör. 4 ya da 0).
-pwm_hz: 2000           # L298N için PWM frekansı
+pwm_hz: 2000           # TB6612FNG PWM frekansı (çip 100 kHz'e kadar destekler; lgpio yazılım PWM'i için 2 kHz yeterli)
 encoder_pull_up: true  # Pi dahili pull-up (açık kollektör hall çıkışları için güvenli)
 
-motors:                # her motora ayrı L298N, A kanalı (ENA jumper'ı çıkarılmış)
-  left:  {pwm: 12, in1: 5,  in2: 6,  invert: false}   # pin 32, 29, 31
-  right: {pwm: 13, in1: 16, in2: 20, invert: true}    # pin 33, 36, 38 (ayna montaj: ters bekleniyor, stage 02'de doğrula)
+driver:                # tek TB6612FNG: A kanalı = sol motor, B kanalı = sağ motor
+  stby: 26             # pin 37. LOW = sürücü kapalı (motorlar serbest). Yazılım açılışta HIGH, kapanışta LOW yapar.
+
+motors:
+  left:  {pwm: 12, in1: 5,  in2: 6,  invert: false}   # PWMA, AIN1, AIN2 → pin 32, 29, 31
+  right: {pwm: 13, in1: 20, in2: 21, invert: true}    # PWMB, BIN1, BIN2 → pin 33, 38, 40 (ayna montaj: ters bekleniyor, stage 02'de doğrula)
 
 encoders:
   left:  {a: 17, b: 27, invert: false}                # pin 11, 13
-  right: {a: 22, b: 23, invert: true}                 # pin 15, 16 (ayna montaj: ters bekleniyor, stage 03'te doğrula)
+  right: {a: 23, b: 24, invert: true}                 # pin 16, 18 (ayna montaj: ters bekleniyor, stage 03'te doğrula)
+
+imu:                   # BNO055 (I2C). Şu an yazılımda kullanılmıyor; kablolama referansı için.
+  i2c_bus: 1           # SDA = GPIO2 (pin 3), SCL = GPIO3 (pin 5)
+  address: 0x28
 
 lidar:
   port: /dev/ttyUSB0

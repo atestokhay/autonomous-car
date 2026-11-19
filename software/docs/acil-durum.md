@@ -25,36 +25,35 @@ Bu dosya iki bölümden oluşur:
 | **Duman, yanık/plastik kokusu, kıvılcım** | Ana şalteri kapat → bataryanın fişini çek (eldiven/kuru bez, hızlı değil sakin) → aracı açık ve yanıcı olmayan zemine al | A2 |
 | **Batarya şişmiş, ısınıyor, çok sıcak** | Aracı kullanma/şarj etme. Bataryayı metal veya seramik kapta, yanıcılardan uzakta, açık havada bırak | A3 |
 | **Araç kontrolsüz gidiyor / durmuyor** | Ana şalteri kapat (yazılımı durdurmaya çalışma) | A4 |
-| **Motor veya L298N dokunamayacak kadar sıcak** | Şalteri kapat, 10 dk soğut | A5 |
+| **Motor veya TB6612 dokunamayacak kadar sıcak** | Şalteri kapat, 10 dk soğut | A5 |
 | **Pi kapanıyor / yeniden başlıyor** | Motorları durdur, şalteri kapat | B1 |
 | **Sigorta attı** | Şalteri kapat. Sigortayı **aynı değerle** değiştirmeden önce nedeni bul (kısa devre?) | A6 |
 | **Elektrik çarpması hissi / kablo erimesi** | Şalteri kapat, bataryayı çıkar | A2 |
 
 ## A2. Duman / yanık kokusu sonrası inceleme
-1. Batarya çıkarılmış olarak, hangi parçanın koktuğunu/rengi değiştiğini bul (L298N, regülatör, kablo, konnektör).
+1. Batarya çıkarılmış olarak, hangi parçanın koktuğunu/rengi değiştiğini bul (TB6612, regülatör, kablo, konnektör).
 2. Yanmış/erimiş parça **tekrar kullanılmaz**; yenisiyle değişir.
 3. Neden bulunmadan yeni parça takılmaz: kısa devre, ters polarite, fazla gerilim, ince kablo, gevşek klemens.
-4. Kontrol: ters polarite var mı? Motor besleme regülatörü gerçekten 12 V mu (A6'daki ölçümlerle)? 
+4. Kontrol: ters polarite var mı? Motor buck regülatörü gerçekten 6,0 V mu (A6'daki ölçümlerle)? TB6612 VCC'ye yanlışlıkla 6 V gitmiş olabilir mi? 
 5. Öğretmene **fotoğraf** gönder (yanan parça, kablo bağlantıları).
 
 ## A3. LiPo batarya güvenliği
 - Şişme, ısınma, hasarlı (ezik/yırtık) kılıf = **kullanılamaz**. Bu bataryayı tekrar kullanma; pil atık noktasına götür.
-- Hücre gerilimi: dolu 4,2 V/hücre (toplam 16,8 V). **Asla 3,3 V/hücre (13,2 V toplam) altına indirme.**
-- Bu araçta 12 V motor regülatörü bataryanın 12 V'un üstünde kalmasına ihtiyaç duyar: toplam gerilim
-  **14,0 V (3,5 V/hücre)** altına inince çalışmayı bırak, şarj et. (Hücre alarmı/gerilim göstergesi kullanman önerilir.)
+- Bu araçta **3S** LiPo var. Hücre gerilimi: dolu 4,2 V/hücre (toplam 12,6 V). **Asla 3,3 V/hücre (9,9 V toplam) altına indirme.**
+- Toplam gerilim **10,5 V (3,5 V/hücre)** altına inince çalışmayı bırak, şarj et. (Hücre alarmı/gerilim göstergesi kullanman önerilir.)
 - LiPo'yu yalnızca LiPo dengeli şarj cihazıyla, gözetimde, yanmaz zeminde şarj et.
 - Uzun süre kullanılmayacaksa depolama gerilimine (≈3,8 V/hücre) getir.
 
 ## A4. Araç kontrolsüz giderse (bir sonraki girişten önce)
 Güç kesildikten sonra, **tekerlekler havada**, şu sırayla bak:
-1. Kablo: ENA/PWM, IN1, IN2 kabloları doğru pinde mi (``arac kablo` tablosu`)? Bir IN kablosu GND/3,3 V'a temas ediyor mu?
+1. Kablo: TB6612 PWMA/PWMB, AIN1/AIN2, BIN1/BIN2 kabloları doğru pinde mi (``arac kablo` tablosu`)? Bir IN kablosu GND/3,3 V'a temas ediyor mu?
 2. Enkoder: ters yönde mi sayıyor? (Hız kontrolü ters geri besleme alırsa motor tam hıza kaçar.) `python3 stages/03-enkoder/run.py watch`
 3. Yazılımın güvenlik düzeni: komut kesilince 0,5 sn'de durur; tam güçte hız alınamazsa 0,5 sn'de durdurur
    (runaway koruması). Bunlar **tetiklenmediyse** mesajı/çıktıyı kaydet ve öğretmene gönder; aracı bir daha yerde çalıştırma.
 4. Acil durdurma için **elin her zaman şalterde** olsun.
 
 ## A5. Isınma
-- L298N hafif ısınır (50–70 °C normal olabilir) ama parmağınla 2 sn tutamıyorsan fazla sıcaktır.
+- TB6612 normalde ılık kalır; parmağınla 2 sn tutamıyorsan fazla sıcaktır (kanal başına ~1,2 A sürekli sınırı aşılıyor olabilir).
 - Nedenleri: motor kilitli/tekerlek sıkışık, sürekli yüksek duty, düşük kaliteli kablo/gevşek klemens (dirence bağlı ısınma),
   sürücü kartı soğutucusuz/küçük, besleme gerilimi yüksek.
 - Çözüm: duty düşür, kilitli motoru bul, klemensleri sık, sürücüyü havalandır. Ana akım yolunu ölç.
@@ -63,11 +62,11 @@ Güç kesildikten sonra, **tekerlekler havada**, şu sırayla bak:
 ## A6. Sigorta / ölçüm doğrulaması (şalter kapalıyken başla)
 1. Batarya çıkarılmış: multimetre ile **süreklilik (bip) modu**: güç dağıtım (+) ile GND arası **bip OLMAMALI** (kısa devre).
 2. Bataryayı tak, şalter açık, motorlar boşta (tekerlek havada):
-   - Batarya: ≈ 14,0–16,8 V
-   - Motor regülatörü çıkışı: **≈ 12,0 V** (12,5 V üstü olmamalı; L298N sonrası motor terminalinde ≈ 10 V normal)
+   - Batarya: ≈ 10,5–12,6 V (3S)
+   - Motor buck çıkışı: **≈ 6,0 V** (6,2 V üstü olmamalı; TB6612 kaybı küçüktür, motor terminalinde tam duty'de ≈ 5,5–6 V)
    - Pi regülatörü çıkışı: **5,0–5,2 V**
    - MP1584EN çıkışı: **4,9–5,2 V** (hedef 5,00), LiDAR bağlanmadan ve bağlıyken yeniden ölç
-3. Sigorta öneri aralığı: bu sistem için **7,5–10 A** otomotiv/DC sigorta. (Motor regülatörü ve L298N'in kendi akım
+3. Sigorta: bu sistemde **10 A** otomotiv/DC sigorta, bataryaya en yakın eleman. (Motor buck ve TB6612'nin kendi akım
    sınırlarına göre öğretmeninle doğrula; sigorta, en zayıf kablo/regülatörden küçük olmalı.)
 
 ---
@@ -87,12 +86,12 @@ Aşağıdaki adımlarda bu rapordaki satırlara atıf yapılır.
 
 ## B1. Güç
 **Belirti:** Pi kapanıyor, motor çalışınca resetliyor, LiDAR dönmüyor.
-1. Bataryayı ölç (≥ 14,0 V). Düşükse şarj et. (Bu en sık neden.)
+1. Bataryayı ölç (≥ 10,5 V). Düşükse şarj et. (Bu en sık neden.)
 2. Şalter + sigorta çıkışında gerilim var mı?
-3. Motor regülatörü 12 V, Pi regülatörü 5,0–5,2 V, MP1584EN 4,9–5,2 V (A6).
+3. Motor buck 6,0 V, Pi regülatörü 5,0–5,2 V, MP1584EN 4,9–5,2 V (A6).
 4. Motorlar çalışırken yeniden ölç: Pi 5 V hattı **düşüyor mu?** Düşüyorsa kablo ince/gevşek, ortak GND kötü, ya da regülatör akım yetmiyor.
 5. `vcgencmd get_throttled` → `0x0`. Değilse güç sorunu var (`dmesg | grep -i under`).
-6. Ortak GND: Pi GND ↔ her iki L298N GND ↔ MP1584EN GND ↔ enkoder GND arasında süreklilik (bip).
+6. Ortak GND: Pi GND ↔ TB6612 GND ↔ motor buck OUT− ↔ GND bara ↔ MP1584EN GND ↔ enkoder GND arasında süreklilik (bip).
 
 **Geçti:** Motorlar yüklüyken Pi resetlenmiyor, `get_throttled` = `0x0`.
 
@@ -132,13 +131,12 @@ id                                  # gpio ve dialout grubunda mısın
 `python3 stages/02-motor/run.py --side left --duty 0.3`
 | Belirti | Sırayla bak |
 |---|---|
-| Hiçbiri dönmüyor | 1) Motor regülatörü 12 V çıkışı var mı  2) L298N'e +12 V ve GND geliyor mu (L298N üzerindeki güç LED'i)  3) ENA jumper'ı **çıkarılmış** mı ve ENA'ya Pi PWM pini bağlı mı  4) IN1/IN2 pinleri doğru mu  5) motor kabloları OUT1/OUT2'de mi |
-| Biri dönmüyor | O tarafın bütün zinciri: Pi pini → L298N → motor. Diğer sürücüyle yer değiştirip nerede kaldığını bul. Motor terminalinde gerilim ölç (≈ 8–10 V tam duty'de) |
+| Hiçbiri dönmüyor | 1) Motor buck 6 V çıkışı var mı  2) TB6612 VM'de 6 V, VCC'de 3,3 V var mı  3) **STBY** (pin 37) motor komutu sırasında 3,3 V mu? 0 V ise STBY kablosu yanlış/kopuk  4) PWMA/PWMB, AIN/BIN pinleri doğru mu  5) motor kabloları AO1/AO2 ve BO1/BO2'de mi |
+| Biri dönmüyor | O tarafın bütün zinciri: Pi pini → TB6612 kanalı (A sol, B sağ) → motor. Motor terminalinde gerilim ölç (≈ 5,5–6 V tam duty'de) |
 | Yalnız yüksek duty'de dönüyor | Normal (ölü bölge). Düşük batarya da yapar. |
 | Ters dönüyor | `config/pins.yaml` → `invert` çevir |
 | Titriyor ama dönmüyor | Besleme çöküyor (batarya/regülatör), ya da motor mekanik kilitli |
-| L298N LED'i yanmıyor | 5V-EN jumper'ı takılı mı, besleme geliyor mu |
-| Hep tam hız | PWM pini yanlış / ENA jumper'ı hâlâ takılı (ENA +5 V'a bağlı kalır) |
+| Hep tam hız | PWM kablosu yanlış pinde ya da PWMA/PWMB bir 3,3 V hattına temas ediyor |
 
 **Geçti:** iki tekerlek ileri ve geri doğru yönde dönüyor, komut bitince duruyor.
 
@@ -150,7 +148,8 @@ id                                  # gpio ve dialout grubunda mısın
 | Yalnız bir kanal değişiyor | A veya B kablosu kopuk/yanlış pin |
 | Sayı geri sayıyor | `pins.yaml` → o enkoderin `invert` değeri |
 | Sayı sıçrıyor / gürültülü | Sinyal kabloları motor/güç kablosuyla yan yana: ayır, kısalt, GND'yi kontrol et |
-| Tur başına tick ≠ 392 | `calibrate` ile ölç, çıkan değeri `robot.yaml`'a yaz |
+| Tur başına tick tutarsız | `calibrate` ile ölç, çıkan değeri `robot.yaml`'a yaz (N20: 28 × dişli oranı civarı) |
+| Motor dönerken `eksik` artıyor | Kenar kaçıyor: N20 enkoderi motor milinde, devir yüksek. Duty'yi düşürüp tekrar dene; sürerse öğretmene bildir |
 | Pi'yi güçlü hissediyor / reset | Enkoder 5 V ile besleniyor ve Pi pinine 5 V sinyal geliyor olabilir: **hemen sök, 3,3 V'a geç, seviye dönüştürücü kullan** |
 
 **Geçti:** iki enkoder ileri yönde artıyor, tur başına tutarlı.

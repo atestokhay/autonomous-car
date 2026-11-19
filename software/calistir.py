@@ -74,6 +74,9 @@ def a_enkoder():
                 edit_yaml_invert("encoders", side, not get_invert("encoders", side))
             else:
                 return sorun(f"{ad} enkoder yönü düzelmedi.")
+    if not get_robot_ticks():
+        if not a_tur_basina_tick():
+            return False
     say("\nŞimdi motor çalışırken enkoder doğru sayıyor mu bakacağız (5 sn).")
     if not guvenlik("TEKERLEKLER HÂLÂ HAVADA mı ve ELİN ŞALTERDE mi?"):
         return False
@@ -81,11 +84,27 @@ def a_enkoder():
         return sorun("Enkoderli motor testi hata verdi.")
     say("Her iki tekerlek yaklaşık AYNI hızda dönmeli (RPM değerleri birbirine yakın), 'eksik' hep 0 olmalı.")
     if not ask_yn("'eksik' sayacı 0 kaldı ve iki tekerleğin RPM değeri birbirine yakın mı?", "e"):
-        say("Bir tekerleği 10 tur elle çevirip tur başına sayıyı ölçelim.", "y")
-        for side in ("left", "right"):
-            script("stages/03-enkoder/run.py", "calibrate", "--side", side, "--turns", "10", *mock_arg())
-        say("Çıkan sayı 392'den çok farklıysa config/robot.yaml → ticks_per_rev satırına yaz, sonra tekrar çalıştır.", "y")
+        say("Tekerlek başına tur sayısını yeniden ölçelim.", "y")
+        return a_tur_basina_tick()
     return True
+
+
+def a_tur_basina_tick():
+    """N20 motorun dişli oranı modele göre değişir: tekerlek turu başına tick ölçülüp robot.yaml'a yazılır."""
+    say("\n--- Tekerlek bir turda kaç sayım üretiyor? ---", "b")
+    say("N20 motorlarda bu sayı dişli oranına bağlıdır (enkoder 7 darbe/kanal × 4 kenar × dişli oranı;\n"
+        "örn. 1:100 → 2800). Tekerleği işaretle ve ELLE TAM 10 tur ileri çevir. İki tekerlek için yapılır.")
+    for side in ("left", "right"):
+        script("stages/03-enkoder/run.py", "calibrate", "--side", side, "--turns", "10", *mock_arg())
+    while True:
+        a = input("\nEkranda iki tekerlek için yazan tick/tur değerleri birbirine yakınsa birini yaz (tam sayı): ").strip()
+        if a.isdigit() and int(a) > 0:
+            set_robot_ticks(int(a))
+            olcum_kaydet("ticks_per_rev", int(a))
+            say(f"   ✓ config/robot.yaml → ticks_per_rev: {int(a)}", "g")
+            return True
+        if not ask_yn("Pozitif tam sayı yazmalısın. Tekrar deneyelim mi? ('h' = dur)", "e"):
+            return sorun("ticks_per_rev ölçülemedi: iki tekerlek çok farklıysa enkoder kablolarını kontrol et.")
 
 
 def a_pid():
@@ -95,7 +114,7 @@ def a_pid():
     if not guvenlik("TEKERLEKLER HAVADA mı, parmak/kablo tekerleklerden uzak mı, ELİN ŞALTERDE mi?"):
         return False
     return script("stages/04-pid/autotune.py", *mock_arg()) or sorun(
-        "Otomatik ayar geçmedi. En sık neden: batarya düşük (14,0 V altı) ya da gevşek kablo. Şarj et, tekrar dene.")
+        "Otomatik ayar geçmedi. En sık neden: batarya düşük (10,5 V altı) ya da gevşek kablo. Şarj et, tekrar dene.")
 
 
 def a_lidar_seri():
