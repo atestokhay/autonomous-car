@@ -137,7 +137,7 @@ IMU şu an yazılımda kullanılmıyor; I2C'nin açık olması (`dtparam=i2c_arm
 pull-up direnci olmadığı doğrulanmalıdır.
 
 **Enkoder hızı:** N20 enkoderi motor milindedir; tekerlek turu başına 28 × dişli oranı kadar kenar
-üretir (ör. 1:100 → 2800). Yüksek devirde Python kenar sayımı kaçırabilir; aşama 3'teki `eksik`
+üretir (bizim 450 RPM N20: genelde 1:30 → ~840; 450 RPM'de tekerlek başına ~6300 kenar/sn). Yüksek devirde Python kenar sayımı kaçırabilir; aşama 3'teki `eksik`
 sayacı 0'dan büyükse bildirin.
 
 ## 5. İlk enerji verme sırası

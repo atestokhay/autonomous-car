@@ -31,7 +31,7 @@
 | Sayı **azalıyor** (ileri komutta) | `pins.yaml` → o enkoderin `invert` değerini çevir |
 | Tekerlek başına tick yok/değişken | A ve B kanallarından biri bağlı değil olabilir: `watch` çıktısında yalnız bir kanalın değiştiğini gör |
 | `eksik` değeri artıyor | Kenarlar kaçıyor: kabloyu kısalt/ekranla, hızı düşür, CPU yükü (`top`); sürerse C++ gerekir |
-| `ticks_per_rev` iki tekerlekte farklı | Tekerleği tam 10 tur elle çevirdin mi? N20'de değer 28 × dişli oranıdır (1:100 → 2800); iki motorun dişli oranı aynı mı? |
+| `ticks_per_rev` iki tekerlekte farklı | Tekerleği tam 10 tur elle çevirdin mi? N20'de değer 28 × dişli oranıdır (450 RPM modelde genelde 1:30 → ~840); iki motorun dişli oranı aynı mı? |
 
 ## Aşama 4 — PID
 | Belirti | Kontrol |
