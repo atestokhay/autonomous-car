@@ -52,7 +52,8 @@ class FakeNode:
         return cb
 
     def get_logger(self):
-        return types.SimpleNamespace(info=lambda *a: None, error=lambda *a: None, warn=lambda *a: None)
+        return types.SimpleNamespace(info=lambda *a: None, error=lambda *a: None, warn=lambda *a: None,
+                                     warning=lambda *a: None)
 
     def get_clock(self):
         return types.SimpleNamespace(now=lambda: types.SimpleNamespace(to_msg=lambda: Msg()))

@@ -22,7 +22,18 @@ python3 stages/06-odometri/calibrate.py live                    # canlı x, y, a
 - Sonuç `config/robot_cal.yaml`'a yazılır (onay sorar) ve `robot.yaml`'ın üstüne biner. Silersen varsayılana dönülür.
 - `live`: aracı 1 m itince `x≈1.000`, yerinde 1 tur çevirince açı `≈360°` göstermeli.
 
-## 3) Sürüş düğümü testi (tekerlekler HAVADA)
+## 3) BNO055 gyro (dönüş açısı)
+Sürüş düğümü odometride **mesafeyi enkoderden, dönüş açısını BNO055'ten** alır (tekerlek kayması açıyı bozmaz).
+BNO055 bulunamaz ya da okunamazsa düğüm uyarı verir ve açıyı eskisi gibi enkoderden hesaplar; araç yine çalışır.
+Kapatmak için `config/pins.yaml → imu.use_for_heading: false`.
+```bash
+python3 stages/06-odometri/check_imu.py          # canlı açı + kalibrasyon (gyro 3 olmalı)
+python3 stages/06-odometri/check_imu.py yon      # aracı elle 90° SOLA çevir: +90° görmelisin
+```
+`yon` testi açıyı ters ölçerse (`≈ −90°`) `pins.yaml → imu.yaw_invert` değerini kendisi çevirir; bir kez daha çalıştır.
+BNO055 kartı gövdeye **düz ve sıkı** sabitlenmeli (çip yüzü yukarı ya da aşağı; dik takılırsa açı yanlış olur).
+
+## 4) Sürüş düğümü testi (tekerlekler HAVADA)
 ```bash
 ros2 launch ros/launch/bringup.launch.py
 # yeni terminal:
@@ -38,6 +49,7 @@ Aracın gerçek aldığı yolu ölç; `/odom` x değeriyle %5 içinde uyumalı.
 ## Bitti sayılır
 - [ ] `radius` ve `base` kalibre edildi (`robot_cal.yaml` var).
 - [ ] `live`: 1 m itince x≈1.00 (±%3), 1 tur çevirince ≈360° (±5°).
+- [ ] `check_imu.py yon`: 90° sola çevirince ≈ +90° (BNO055 takılıysa).
 - [ ] `teleop` ile sürüş düğümü araca hareket verdi, komut bırakılınca durdu.
 - [ ] Yerde 1 m düz sürüşte gerçek yol ile `/odom` farkı < %5.
 

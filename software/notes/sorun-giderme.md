@@ -31,7 +31,7 @@
 | Sayı **azalıyor** (ileri komutta) | `pins.yaml` → o enkoderin `invert` değerini çevir |
 | Tekerlek başına tick yok/değişken | A ve B kanallarından biri bağlı değil olabilir: `watch` çıktısında yalnız bir kanalın değiştiğini gör |
 | `eksik` değeri artıyor | Kenarlar kaçıyor: kabloyu kısalt/ekranla, hızı düşür, CPU yükü (`top`); sürerse C++ gerekir |
-| `ticks_per_rev` iki tekerlekte farklı | Tekerleği tam 10 tur elle çevirdin mi? N20'de değer 28 × dişli oranıdır (450 RPM modelde genelde 1:30 → ~840); iki motorun dişli oranı aynı mı? |
+| `ticks_per_rev` iki tekerlekte farklı | Tekerleği tam 10 tur elle çevirdin mi? N20'de değer 28 × dişli oranıdır (300 RPM modelde genelde 1:50 → ~1400, bazılarında 1:100 → ~2800); iki motorun dişli oranı aynı mı? |
 
 ## Aşama 4 — PID
 | Belirti | Kontrol |
@@ -49,7 +49,7 @@
 |---|---|
 | `/dev/ttyUSB0` yok | Kablo/adaptör, `lsusb`, `dmesg \| tail`; USB'yi çıkarıp tak. Port `ttyUSB1` ise `pins.yaml` `lidar.port` |
 | `Permission denied` | `sudo usermod -aG dialout $USER` → çıkış-giriş |
-| Motor dönmüyor / ses yok | LiDAR 5 V alıyor mu? MP1584EN çıkışını yükte ölç (düşüyorsa akım yetersiz) |
+| Motor dönmüyor / ses yok | LiDAR 5 V alıyor mu? LiDAR regülatörünün çıkışını yükte ölç (düşüyorsa akım yetersiz) |
 | `Cevap yok` | Baud 1 000 000 (S3) olmalı; adaptörün baud desteği; USB kablosu çok uzun/kötü |
 | Yön yanlış | `robot.yaml` → `lidar_yaw_deg` (90/180/-90) |
 | Duvarlar ayna görüntüsü (sağ-sol ters) | `robot.yaml` → `lidar_inverted: true` |
@@ -67,6 +67,13 @@
 | Sürüş düğümü araç hareket ettirmiyor | `/cmd_vel` yayınlanıyor mu (`ros2 topic echo /cmd_vel`)? Aşama 2–4 temiz mi? |
 | Komutu bırakınca araç durmuyor | **Hemen güç şalteri.** Sonra `drive_node` çalışıyor mu bak; bu durum olmamalı, hata satırını gönder |
 | Araç sürekli bir yana kayıyor | Aşama 4 tekrar (iki tekerlek aynı hıza ulaşıyor mu); tekerlek yarıçapları eşit mi |
+| `drive_node` "BNO055 açılamadı/başlatılamadı" diyor | `i2cdetect -y 1`'de `28` var mı? SDA pin 3, SCL pin 5, VIN 3,3 V. Kullanıcı `i2c` grubunda mı (`id`)? Araç yine çalışır, açı enkoderden |
+| `check_imu.py yon` açıyı ters (≈ −90°) ölçüyor | Kart ters takılı: betik `pins.yaml → imu.yaw_invert`'ü kendisi çevirir; testi bir kez daha çalıştır |
+| "BNO055 okunamıyor" (sürüş sırasında) / Errno 121 | I2C kabloları kısa ve sıkı mı? Motor kablolarından uzak mı? Gerekirse `/boot/firmware/config.txt`'e `dtparam=i2c_arm_baudrate=50000` ekle, yeniden başlat |
+| Başlat butonu hiçbir şey yapmıyor | `systemctl status arac-buton`; `journalctl -u arac-buton -f`. Servis durdurulup `python3 tools/baslat_butonu.py test` ile basış görülüyor mu? Buton pin 36 ↔ pin 34 mü (çapraz bacaklar)? |
+| Buton testinde bir basış birden çok sayılıyor | Bacak bağlantısı gevşek; kabloyu sıkı tak / lehimle |
+| Butona basınca program başlıyor ama araç hiç hareket etmiyor | `/scan` gelmiyor olabilir (aşama 5); `journalctl -u arac-buton -f`'te "UYARI: /scan gelmiyor" var mı |
+| Odometri açısı yavaşça kayıyor (araç dururken) | Gyro kalibrasyonu: `check_imu.py` çalışırken aracı 2–3 sn kıpırdatma, gyro değeri 3 olmalı |
 
 ## Aşama 7 — Duvar takibi
 | Belirti | Kontrol |

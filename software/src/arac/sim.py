@@ -1,9 +1,10 @@
-"""Donanımsız test için basit DC motor modeli (1. derece + ölü bölge)."""
+"""Donanımsız test için basit DC motor modeli (1. derece + ölü bölge).
+Varsayılan k: N20 6 V 300 RPM (boşta ≈ 31 rad/s; yük altında duty başına ≈ 25 rad/s)."""
 import math
 
 
 class SimPlant:
-    def __init__(self, ticks_per_rev=1000, k=37.0, tau=0.08, deadband=0.10):
+    def __init__(self, ticks_per_rev=1000, k=25.0, tau=0.08, deadband=0.10):
         self.tpr, self.k, self.tau, self.deadband = ticks_per_rev, k, tau, deadband
         self.duty = 0.0
         self.omega = 0.0   # rad/s

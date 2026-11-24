@@ -57,6 +57,10 @@ class LgpioBackend:
             l.callback(self._h, gpio, l.BOTH_EDGES, lambda chip, g, level, ts: fn(g, level, ts))
         )
 
+    def input(self, gpio, pull_up=True):
+        self._l.gpio_claim_input(self._h, gpio, self._l.SET_PULL_UP if pull_up else 0)
+        self._pins.append(gpio)
+
     def read(self, gpio):
         return self._l.gpio_read(self._h, gpio)
 
@@ -89,6 +93,9 @@ class MockBackend:
     def watch(self, gpio, fn, pull_up=True):
         self.watchers[gpio] = fn
         self.levels.setdefault(gpio, 0)
+
+    def input(self, gpio, pull_up=True):
+        self.levels.setdefault(gpio, 1 if pull_up else 0)
 
     def read(self, gpio):
         return self.levels.get(gpio, 0)
