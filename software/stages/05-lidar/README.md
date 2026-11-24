@@ -1,6 +1,6 @@
 # Aşama 5 — LiDAR (RPLIDAR S3)
 
-Önce kablolama sihirbazındaki LiDAR adımı: adaptör pinout'u, **MP1584EN çıkışı ~5,0 V**, USB sadece veri.
+Önce kablolama sihirbazındaki LiDAR adımı: adaptör pinout'u, **LiDAR regülatörü (5 V / 3 A buck) çıkışı ~5,0 V**, USB sadece veri.
 LiDAR gücü Pi'den **alınmaz**.
 
 ## 1) Seri bağlantı kontrolü (ROS'suz)

@@ -17,9 +17,18 @@ encoders:
   left:  {a: 17, b: 27, invert: false}                # pin 11, 13
   right: {a: 23, b: 24, invert: true}                 # pin 16, 18 (ayna montaj: ters bekleniyor, stage 03'te doğrula)
 
-imu:                   # BNO055 (I2C). Şu an yazılımda kullanılmıyor; kablolama referansı için.
+imu:                   # BNO055 (I2C): odometride dönüş açısı (gyro). Bulunamazsa açı otomatik olarak enkoderden.
   i2c_bus: 1           # SDA = GPIO2 (pin 3), SCL = GPIO3 (pin 5)
-  address: 0x28
+  address: 0x28        # ADR pini boş/GND = 0x28, 3,3 V = 0x29
+  use_for_heading: true
+  mode: imuplus        # imuplus = ivme + gyro (manyetometre yok; motor/batarya mıknatısından etkilenmez). ndof = + pusula
+  yaw_invert: false    # aracı elle SOLA çevirince açı AZALIYORSA true yap (kart ters takılı). Aşama 6: check_imu.py yon
+
+start_button:          # Başlat butonu: bir ayağı GPIO16'ya (pin 36), diğer ayağı GND'ye (pin 34). Direnç gerekmez.
+  gpio: 16             # pin 36. Dahili pull-up: basılı = LOW
+  delay_s: 5           # basıldıktan kaç sn sonra program başlar (geri sayımda tekrar basmak = iptal)
+  side: right          # takip edilecek duvar: right / left
+  v_scale: 0.5         # hız ölçeği (ilk denemelerde 0.5; araç güvenilir olunca 1.0)
 
 lidar:
   port: /dev/ttyUSB0

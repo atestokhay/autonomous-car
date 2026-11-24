@@ -30,6 +30,20 @@ sürtünme, gecikme, gürültü farklıdır; bu yüzden hız ölçeğiyle düş�
 
 `side:=left` ile sol duvar takibi.
 
+## 2b) Başlat butonuyla (bilgisayarsız çalıştırma)
+Buton: GPIO16 (pin 36) ↔ GND (pin 34). Ayarlar `config/pins.yaml → start_button`
+(`delay_s: 5`, `side`, `v_scale`).
+```bash
+python3 tools/baslat_butonu.py test          # kablolama testi: her basışta bir satır (hiçbir şey başlatmaz)
+bash tools/buton_servis_kur.sh               # Pi her açıldığında butonu beklesin (servis: arac-buton)
+journalctl -u arac-buton -f                  # ne olduğunu izle
+```
+- Basınca **5 sn sonra** program (`wall_follow.launch.py`) başlar; araç LiDAR hazır olunca (birkaç sn) hareket eder.
+- Geri sayım sırasında tekrar bas → **iptal**. Program çalışırken bas → **durur** (araç durur).
+- Pi açılırken buton basılıysa program kendiliğinden başlamaz.
+- Aşama 1–6 ayarlarını yaparken servisi durdur: `sudo systemctl stop arac-buton`. Kaldırmak: `bash tools/buton_servis_kur.sh kaldir`.
+- Elin yine güç şalterinde olsun: buton bir **güvenlik durdurması değildir** (program donarsa şalter).
+
 ## 3) Davranış ve ayar (config/nav.yaml)
 | Gözlem | Değiştir |
 |---|---|

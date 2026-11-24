@@ -6,15 +6,16 @@ Pin numaralarının tek kaynağı `software/config/pins.yaml` dosyasıdır; bu b
 
 ## 1. Donanım
 
-- Raspberry Pi 5
-- 2 × N20 6 V enkoderli DC motor (manyetik enkoder, motor milinde)
+- Raspberry Pi 5 (8 GB)
+- 2 × N20 6 V 300 RPM enkoderli DC motor (manyetik enkoder, motor milinde)
 - 1 × TB6612FNG çift kanallı motor sürücü (A kanalı = sol, B kanalı = sağ)
 - RPLIDAR S3 ve USB adaptörü
-- BNO055 9 eksen IMU (I2C, adres 0x28)
+- BNO055 9 eksen IMU (I2C, adres 0x28): gyro, odometride dönüş açısı
+- Başlat butonu (anlık basmalı, normalde açık)
 - 3S LiPo batarya (11,1 V nominal, 12,6 V tam dolu)
-- Motorlar için buck regülatör (6,0 V, en az 5 A)
-- Raspberry Pi için 5 V / 5 A USB-C DC-DC dönüştürücü
-- LiDAR için MP1584EN buck regülatör (5,0 V)
+- Motorlar için buck regülatör (6,0 V, 5 A)
+- Raspberry Pi için ayarlanabilir buck regülatör (5,1 V, 3 A) + USB-C güç kablosu (USB-C erkek → açık uç)
+- LiDAR için ayarlanabilir buck regülatör (5,0 V, 3 A)
 - 10 A sigorta, ana şalter, güç dağıtım baraları (+11,1 V ve GND)
 
 ## 2. Güç bağlantıları
@@ -43,24 +44,31 @@ kilitlenme (stall) akımı bu sınırın altında kalmalıdır.
 
 ### B. Raspberry Pi 5 beslemesi
 
-`+11,1 V bara → USB-C DC-DC IN+`   `GND bara → USB-C DC-DC IN−`
+`+11,1 V bara → Pi regülatörü IN+`   `GND bara → Pi regülatörü IN−`
 
-`DC-DC USB-C çıkışı → Raspberry Pi 5 USB-C güç girişi`
+`Pi regülatörü OUT+ (5,1 V) → USB-C güç kablosu kırmızı tel (VBUS)`   `Pi regülatörü OUT− → USB-C güç kablosu siyah tel (GND)`
 
-Pi aynı anda iki ayrı güç kaynağına (ör. duvar adaptörü + DC-DC) bağlanmaz.
+`USB-C güç kablosu → Raspberry Pi 5 USB-C güç girişi`
+
+Regülatör çıkışı **Pi bağlanmadan önce** 5,1 V'a (5,0–5,2 V) ayarlanır. Pi'nin 5 V GPIO pinleri (pin 2, 4) besleme
+için kullanılmaz. Pi aynı anda iki ayrı güç kaynağına (ör. duvar adaptörü + regülatör) bağlanmaz.
+
+**3 A sınırı:** Pi 5 için önerilen besleme 5 A'dir. 3 A'lik beslemede Pi 5 çalışır ama USB portlarına toplam
+600 mA verir; LiDAR ayrı beslendiği için bu projede yeterlidir. USB'ye güç çeken başka cihaz takılmaz. Yük altında
+`vcgencmd get_throttled` → `0x0` olmalı; değilse ya da regülatör çok ısınıyorsa 5 A'lik regülatöre geçilir.
 
 ### C. RPLIDAR S3 beslemesi
 
 LiDAR, Raspberry Pi'nin USB 5 V hattından beslenmez.
 
-`+11,1 V bara → MP1584EN IN+`   `GND bara → MP1584EN IN−`
+`+11,1 V bara → LiDAR regülatörü IN+`   `GND bara → LiDAR regülatörü IN−`
 
-`MP1584EN OUT+ (5,0 V) → LiDAR 5V`   `MP1584EN OUT− → LiDAR GND`
+`LiDAR regülatörü OUT+ (5,0 V) → LiDAR 5V`   `LiDAR regülatörü OUT− → LiDAR GND`
 
 LiDAR beslemesi 4,9–5,2 V aralığında tutulur (hedef 5,00 V); çıkış LiDAR bağlanmadan önce ayarlanır.
 LiDAR'ın veri hattı USB adaptörüne, adaptör de USB kablosuyla Pi'nin USB-A portuna gider.
 
-**Geri besleme uyarısı:** Adaptör kendi USB 5 V'unu da LiDAR'a veriyorsa, MP1584EN ile paralel
+**Geri besleme uyarısı:** Adaptör kendi USB 5 V'unu da LiDAR'a veriyorsa, LiDAR regülatörü ile paralel
 iki kaynak oluşur. Adaptörün harici güç seçeneği (jumper/giriş) kullanılarak USB 5 V'un LiDAR'a
 gitmediği multimetreyle doğrulanmalıdır.
 
@@ -69,6 +77,7 @@ gitmediği multimetreyle doğrulanmalıdır.
 İki GND hattı vardır:
 
 - **GND bara (güç):** batarya (−), üç regülatörün IN− uçları, motor buck OUT− ve TB6612 VM GND'si.
+  (Buck regülatörlerde IN− ve OUT− kart üzerinde ortaktır.)
 - **GND lojik hattı:** Pi pin 14, iki enkoder GND, BNO055 GND. TB6612 lojik GND'si Pi pin 6'ya bağlıdır.
 
 TB6612 kartında VM GND ve lojik GND içeriden ortaktır. Bu yüzden:
@@ -129,15 +138,33 @@ Motor yönü ters çıkarsa kablo değiştirilmez; `pins.yaml` içindeki `invert
 | VIN | 3,3 V lojik hattı | 17 |
 | GND | GND lojik hattı | 14 |
 
-IMU şu an yazılımda kullanılmıyor; I2C'nin açık olması (`dtparam=i2c_arm=on`) ve `i2cdetect -y 1`
-çıktısında `28` görünmesi yeterli doğrulamadır.
+Yazılım BNO055'i gyro olarak kullanır: odometride mesafe enkoderden, dönüş açısı BNO055'ten alınır
+(`pins.yaml → imu`). I2C açık olmalı (`dtparam=i2c_arm=on`) ve `i2cdetect -y 1` çıktısında `28` görünmelidir.
+BNO055 bulunamazsa yazılım uyarı verir ve açıyı enkoderden hesaplar. Kart gövdeye düz ve sıkı sabitlenir;
+I2C kabloları kısa tutulur ve motor kablolarından uzak geçirilir. ADR pini boş bırakılır (adres 0x28).
+
+### Başlat butonu
+
+| Buton ayağı | BCM GPIO | Fiziksel pin |
+|---|---:|---:|
+| 1. ayak | GPIO16 | 36 |
+| 2. ayak | GND | 34 |
+
+Anlık basmalı (normalde açık) buton. Direnç ya da 3,3 V gerekmez: yazılım Pi'nin dahili pull-up'ını açar,
+basılınca pin GND'ye çekilir (LOW). Butonun **3,3 V'a ya da 5 V'a bağlanmaması** gerekir. Dört bacaklı
+(6×6 mm) butonlarda karşılıklı iki bacak içeriden zaten bağlıdır: çapraz iki bacağı kullan.
+
+Davranış (`tools/baslat_butonu.py`, ayarlar `pins.yaml → start_button`):
+- Basınca **5 sn sonra** duvar takibi başlar (`delay_s`). Geri sayım sırasında tekrar basmak **iptal** eder.
+- Program çalışırken basmak programı **durdurur** (araç durur).
+- Pi açılırken buton basılıysa ya da hat kısa devreyse program kendiliğinden **başlamaz**.
 
 **GPIO güvenliği:** Raspberry Pi GPIO girişleri 5 V toleranslı değildir. Enkoderler ve BNO055
 3,3 V'tan beslendiği için çıkışları da 3,3 V seviyesindedir; enkoder kartında 5 V'a çeken bir
 pull-up direnci olmadığı doğrulanmalıdır.
 
 **Enkoder hızı:** N20 enkoderi motor milindedir; tekerlek turu başına 28 × dişli oranı kadar kenar
-üretir (bizim 450 RPM N20: genelde 1:30 → ~840; 450 RPM'de tekerlek başına ~6300 kenar/sn). Yüksek devirde Python kenar sayımı kaçırabilir; aşama 3'teki `eksik`
+üretir (bizim 300 RPM N20: genelde 1:50 → ~1400; yazılımın hız sınırında, ~190 RPM'de tekerlek başına ~4500 kenar/sn). Yüksek devirde Python kenar sayımı kaçırabilir; aşama 3'teki `eksik`
 sayacı 0'dan büyükse bildirin.
 
 ## 5. İlk enerji verme sırası
@@ -145,8 +172,8 @@ sayacı 0'dan büyükse bildirin.
 1. Batarya çıkarılmışken polariteyi ve bağlantıları kontrol et.
 2. Kısa devre kontrolü: + bara ↔ GND bara, TB6612 VM ↔ GND (bip olmamalı).
 3. Motor buck çıkışını yüksüz ölç ve 6,0 V'a ayarla.
-4. Pi DC-DC'nin 5 V çıkışını ölç.
-5. MP1584EN çıkışını yükten önce 5,00 V'a ayarla.
+4. Pi regülatörünün çıkışını yükten önce 5,1 V'a ayarla.
+5. LiDAR regülatörünün çıkışını yükten önce 5,00 V'a ayarla. (İki 3 A regülatörü etiketle: karıştırma.)
 6. LiDAR USB adaptöründe geri besleme olmadığını doğrula.
 7. Pi, sensörler ve motorları aşamalı olarak test et.
 8. Motor testlerinde tekerlekleri yerden kes ve aracı sabitle.
@@ -155,4 +182,4 @@ sayacı 0'dan büyükse bildirin.
 
 - `netlist.txt` — bağlantıların metinsel listesi
 - `schematic.png` — öğrencilerin kurduğu kablolamanın şeması
-- `schematic.fzz` — Fritzing proje dosyası (**eski L298N düzenini gösterir, güncellenmeli**)
+- `schematic.fzz` — Fritzing proje dosyası (**eski L298N düzenini gösterir, geçersiz**; güncel şema `schematic.png`)

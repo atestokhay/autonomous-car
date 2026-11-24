@@ -1,4 +1,6 @@
 OTONOM ARAC - WIRING NETLIST
+(Pi 5 8GB, 3S LiPo, 10 A sigorta, motor buck 6 V/5 A, Pi ve LiDAR icin 5 V/3 A buck,
+ TB6612FNG, 2x N20 6 V 300 RPM, RPLIDAR S3, BNO055, baslat butonu)
 ============================
 
 Format:
@@ -48,7 +50,7 @@ MOTOR_BUCK_OUT_MINUS
 MOTOR_BUCK_OUT_MINUS
   -> BUS_GROUND            # kisa ve kalin kablo: motor donus akimi bu yoldan doner
 
-# Buck cikisi 5.8-6.2 V (hedef 6.0 V), en az 5 A.
+# Buck cikisi 5.8-6.2 V (hedef 6.0 V), 5 A.
 # N20 motorlar 6 V'luk; 3S LiPo (12.6 V'a kadar) dogrudan VM'ye baglanmaz.
 
 
@@ -57,15 +59,23 @@ MOTOR_BUCK_OUT_MINUS
 ============================================================
 
 BUS_11V1_POSITIVE
-  -> PI_USBC_DCDC_IN_PLUS
+  -> PI_BUCK_IN_PLUS
 
 BUS_GROUND
-  -> PI_USBC_DCDC_IN_MINUS
+  -> PI_BUCK_IN_MINUS
 
-PI_USBC_DCDC_USB_C_OUTPUT
+PI_BUCK_OUT_PLUS_5V1
+  -> USB_C_POWER_CABLE_RED_VBUS
+
+PI_BUCK_OUT_MINUS
+  -> USB_C_POWER_CABLE_BLACK_GND
+
+USB_C_POWER_CABLE_USB_C_PLUG
   -> RASPBERRY_PI_5_USB_C_POWER_INPUT
 
-# DC-DC 5 V / 5 A. Pi ayni anda ikinci bir guc kaynagina baglanmaz.
+# Ayarlanabilir buck 5 V / 3 A; cikis Pi baglanmadan once 5.1 V'a (5.0-5.2 V) ayarlanir.
+# 3 A beslemede Pi 5 USB portlarina toplam 600 mA verir: USB'den sadece LiDAR adapteri (veri).
+# Pi'nin 5 V GPIO pinleri (2, 4) kullanilmaz. Pi ayni anda ikinci bir guc kaynagina baglanmaz.
 
 
 ============================================================
@@ -73,15 +83,15 @@ PI_USBC_DCDC_USB_C_OUTPUT
 ============================================================
 
 BUS_11V1_POSITIVE
-  -> LIDAR_MP1584EN_IN_PLUS
+  -> LIDAR_BUCK_IN_PLUS
 
 BUS_GROUND
-  -> LIDAR_MP1584EN_IN_MINUS
+  -> LIDAR_BUCK_IN_MINUS
 
-LIDAR_MP1584EN_OUT_PLUS_5V
+LIDAR_BUCK_OUT_PLUS_5V
   -> RPLIDAR_S3_5V
 
-LIDAR_MP1584EN_OUT_MINUS
+LIDAR_BUCK_OUT_MINUS
   -> RPLIDAR_S3_GND
 
 RPLIDAR_S3_DATA
@@ -90,8 +100,9 @@ RPLIDAR_S3_DATA
 RPLIDAR_USB_ADAPTER_USB
   -> RASPBERRY_PI_5_USB_A_PORT
 
+# LiDAR regulatoru: ayarlanabilir buck 5 V / 3 A.
 # Hedef 5.00 V; izin verilen aralik 4.9-5.2 V. Baslangic akimi ~1.2 A.
-# Adapterin USB 5 V'u LiDAR'a ayrica gidiyorsa MP1584EN ile paralel olur: harici
+# Adapterin USB 5 V'u LiDAR'a ayrica gidiyorsa LiDAR regulatoru ile paralel olur: harici
 # guc secenegi kullanilir, USB VBUS ile harici 5 V birbirini geri beslememelidir.
 
 
@@ -183,7 +194,7 @@ RIGHT_ENCODER_GND
   -> LOGIC_GND_LINE
 
 # Enkoder 3.3 V ile beslenir; cikislari 3.3 V'u asmaz.
-# Tekerlek turu basina tick = 28 x disli orani (asama 3'te olculur).
+# Tekerlek turu basina tick = 28 x disli orani (asama 3'te olculur; 300 RPM N20'de genelde ~1400).
 
 
 ============================================================
@@ -202,7 +213,22 @@ BNO055_VIN
 BNO055_GND
   -> LOGIC_GND_LINE
 
-# Su an yazilimda kullanilmiyor.
+# Gyro: odometride donus acisi (pins.yaml -> imu). Bulunamazsa aci enkoderden.
+# ADR pini bos (0x28). Kart duz ve siki sabitlenir; I2C kablolari kisa tutulur.
+
+============================================================
+9b. BASLAT BUTONU (anlik basmali, normalde acik)
+============================================================
+
+RASPBERRY_PI_GPIO16_PHYSICAL_36
+  -> START_BUTTON_LEG_1
+
+START_BUTTON_LEG_2
+  -> RASPBERRY_PI_GND_PHYSICAL_34
+
+# Direnc yok: Pi dahili pull-up (pins.yaml -> start_button). Basili = LOW.
+# Butona 3.3 V / 5 V baglanmaz. Basinca 5 sn sonra program baslar,
+# calisirken basinca durur (tools/baslat_butonu.py).
 
 
 ============================================================
@@ -220,8 +246,8 @@ BATTERY_3S_MINUS
 
 BUS_GROUND
   -> MOTOR_BUCK_IN_MINUS
-  -> PI_USBC_DCDC_IN_MINUS
-  -> LIDAR_MP1584EN_IN_MINUS
+  -> PI_BUCK_IN_MINUS
+  -> LIDAR_BUCK_IN_MINUS
   -> MOTOR_BUCK_OUT_MINUS
 
 RASPBERRY_PI_GND (orn. PHYSICAL_39)
@@ -238,13 +264,15 @@ RASPBERRY_PI_GND (orn. PHYSICAL_39)
 [ ] Batarya 3S ve polaritesi dogrulandi (10.5-12.6 V).
 [ ] 10 A sigorta bataryaya en yakin eleman.
 [ ] Motor buck cikisi 6.0 V olculdu.
-[ ] Pi DC-DC cikisi olculdu.
-[ ] MP1584EN cikisi 5.00 V olculdu.
+[ ] Pi regulatoru cikisi 5.1 V olculdu (Pi baglanmadan once).
+[ ] LiDAR regulatoru cikisi 5.00 V olculdu.
+[ ] Iki 3 A regulator etiketlendi (Pi / LiDAR).
 [ ] LIDAR guc hatti Pi USB 5 V hattindan ayri.
 [ ] USB adaptoru ile harici 5 V arasinda geri besleme yok.
 [ ] TB6612 VCC = 3.3 V (pin 1), VM = 6 V; karismadi.
 [ ] STBY pin 37'ye bagli.
 [ ] Enkoder ve BNO055 3.3 V'tan besleniyor.
+[ ] Baslat butonu pin 36 (GPIO16) ile pin 34 (GND) arasinda; 3.3 V / 5 V'a bagli degil.
 [ ] GND bara, lojik GND ve Pi GND arasinda sureklilik var.
 [ ] Kisa devre kontrolu yapildi.
 [ ] Ilk motor testinde tekerlekler yerden kesildi.

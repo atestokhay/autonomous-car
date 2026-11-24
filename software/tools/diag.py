@@ -35,13 +35,14 @@ say(f"Teşhis raporu {datetime.datetime.now():%Y-%m-%d %H:%M:%S}")
 run("uname -a", "Çekirdek")
 run("grep PRETTY_NAME /etc/os-release", "İşletim sistemi (Ubuntu 24.04 olmalı)")
 run("cat /proc/device-tree/model; echo", "Cihaz (Raspberry Pi 5 olmalı)")
-run("id", "Kullanıcı ve gruplar (dialout ve gpio olmalı)")
+run("id", "Kullanıcı ve gruplar (dialout, gpio ve i2c olmalı)")
 run("vcgencmd get_throttled", "Güç (0x0 olmalı)")
 run("dmesg 2>&1 | grep -i -E 'under-?volt|throttl|usb.*(disconnect|reset)|ttyUSB' | tail -15",
     "Çekirdek uyarıları (voltaj/USB)")
 run("gpiodetect", "GPIO çipleri (pinctrl-rp1 olmalı)")
 run("ls -l /dev/gpiochip*", "GPIO aygıt izinleri")
 run("ls -l /dev/ttyUSB* /dev/ttyACM* 2>&1; lsusb", "USB / seri aygıtlar (LiDAR adaptörü)")
+run("ls -l /dev/i2c-* 2>&1; i2cdetect -y 1 2>&1", "I2C (BNO055: 28 görünmeli)")
 
 say("\n=== Python modülleri ===")
 for m in ("yaml", "numpy", "serial", "lgpio", "matplotlib"):

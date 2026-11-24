@@ -31,25 +31,32 @@ class Kinematics:
 
 
 class Odometry:
-    """Enkoder sayımlarından poz. Sayımlar ileri yönde artmalı (invert ayarları buna göre)."""
+    """Enkoder sayımlarından poz. Sayımlar ileri yönde artmalı (invert ayarları buna göre).
+    update(..., heading=açı) verilirse dönüş açısı enkoder farkı yerine bu mutlak açının (ör. BNO055 gyro)
+    değişiminden alınır; mesafe yine enkoderden. heading=None: eskisi gibi sadece enkoder."""
 
     def __init__(self, kin, ticks_per_rev, x=0.0, y=0.0, th=0.0):
         self.kin, self.rad_per_tick = kin, TWO_PI / ticks_per_rev
         self.x, self.y, self.th = x, y, th
         self.v = self.w = 0.0
         self._last = None
+        self._last_heading = None
 
     def reset_counts(self, left, right):
         self._last = (left, right)
 
-    def update(self, left, right, dt=None):
+    def update(self, left, right, dt=None, heading=None):
         if self._last is None:
             self._last = (left, right)
+            self._last_heading = heading
             return self.x, self.y, self.th
         dl = (left - self._last[0]) * self.rad_per_tick * self.kin.r
         dr = (right - self._last[1]) * self.rad_per_tick * self.kin.r
         self._last = (left, right)
         d, dth = (dl + dr) / 2.0, (dr - dl) / self.kin.b
+        if heading is not None and self._last_heading is not None:
+            dth = wrap_pi(heading - self._last_heading)    # gyro: tekerlek kaymasından etkilenmez
+        self._last_heading = heading                       # okuma kesilirse (None) bir sonraki okuma yeniden çapa olur
         if abs(dth) < 1e-9:
             self.x += d * math.cos(self.th)
             self.y += d * math.sin(self.th)

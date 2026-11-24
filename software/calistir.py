@@ -93,7 +93,7 @@ def a_tur_basina_tick():
     """N20 motorun dişli oranı modele göre değişir: tekerlek turu başına tick ölçülüp robot.yaml'a yazılır."""
     say("\n--- Tekerlek bir turda kaç sayım üretiyor? ---", "b")
     say("N20 motorlarda bu sayı dişli oranına bağlıdır (enkoder 7 darbe/kanal × 4 kenar × dişli oranı;\n"
-        "450 RPM'lik N20'de genelde 1:30 → yaklaşık 840). Tekerleği işaretle ve ELLE TAM 10 tur ileri çevir. İki tekerlek için yapılır.")
+        "300 RPM'lik N20'de genelde 1:50 → yaklaşık 1400; bazılarında 1:100 → 2800). Tekerleği işaretle ve ELLE TAM 10 tur ileri çevir. İki tekerlek için yapılır.")
     for side in ("left", "right"):
         script("stages/03-enkoder/run.py", "calibrate", "--side", side, "--turns", "10", *mock_arg())
     while True:
@@ -120,11 +120,11 @@ def a_pid():
 def a_lidar_seri():
     baslik("ADIM 5 — LiDAR bağlantısı")
     say("LiDAR'a doğrudan 'sağlığın nasıl?' diye sorulur. 'Sağlık: İYİ' görmelisin.\n"
-        "Önce multimetreyle MP1584EN çıkışının 4,9–5,2 V olduğunu doğrula.")
+        "Önce multimetreyle LiDAR regülatörünün çıkışının 4,9–5,2 V olduğunu doğrula.")
     if MOCK:
         say("(deneme modu: atlandı)", "y")
         return True
-    if not ask_yn("MP1584EN çıkışı 4,9–5,2 V ve LiDAR USB kablosu Pi'ye takılı mı?"):
+    if not ask_yn("LiDAR regülatörü çıkışı 4,9–5,2 V ve LiDAR USB kablosu Pi'ye takılı mı?"):
         return False
     return script("stages/05-lidar/check_lidar.py") or sorun("LiDAR cevap vermedi (güç, USB veri kablosu, port).")
 
@@ -142,7 +142,19 @@ def a_odometri():
     if not script("stages/06-odometri/calibrate.py", "base", "--turns", "3", *mock_arg()):
         return sorun("Tekerlek arası mesafe ölçümü başarısız.")
     say("\nÖnemli: iki soruda da 'robot_cal.yaml'a yazılsın mı?' sorusuna 'e' demiş olmalısın.", "y")
-    return True
+    say("\n--- 3) BNO055 (gyro) yönü: aracı yerinde elle 90° SOLA çevireceksin ---", "b")
+    for _ in range(2):
+        try:
+            r = subprocess.run([PY, "stages/06-odometri/check_imu.py", "yon", *mock_arg()], cwd=ROOT).returncode
+        except KeyboardInterrupt:
+            return False
+        if r == 0:
+            return True
+        if r == 1:
+            say("BNO055 okunamadı: odometri açıyı enkoderden hesaplamaya devam eder (araç yine çalışır).\n"
+                "Kabloları düzeltince kontrol için:  python3 stages/06-odometri/check_imu.py", "y")
+            return True
+    return sorun("BNO055 yönü doğrulanamadı (pins.yaml → imu.yaw_invert).")
 
 
 def ros_baslat(ek=""):
