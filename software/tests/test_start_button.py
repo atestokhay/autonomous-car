@@ -147,9 +147,17 @@ class ConfigAndToolTest(unittest.TestCase):
 
     def test_command_uses_wall_follow_without_second_countdown(self):
         import baslat_butonu as bb
-        cmd = bb.build_command({"side": "left", "v_scale": 0.3}, mock=False)
+        cmd = bb.build_command({"mode": "wall", "side": "left", "v_scale": 0.3}, mock=False)
         self.assertIn("ros/launch/wall_follow.launch.py", cmd)
         self.assertIn("side:=left", cmd)
+        self.assertIn("v_scale:=0.3", cmd)
+        self.assertIn("countdown:=0", cmd)
+
+    def test_command_default_is_lane_follow(self):
+        import baslat_butonu as bb
+        cmd = bb.build_command({"side": "left", "v_scale": 0.3}, mock=False)
+        self.assertIn("ros/launch/lane_follow.launch.py", cmd)
+        self.assertNotIn("side:=", cmd)
         self.assertIn("v_scale:=0.3", cmd)
         self.assertIn("countdown:=0", cmd)
 

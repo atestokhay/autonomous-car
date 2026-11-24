@@ -65,8 +65,11 @@ def build_command(sb, mock):
     side = sb.get("side") or "right"
     v_scale = float(sb.get("v_scale", 0.5))
     # Geri sayım bu betikte yapıldı: düğümün kendi geri sayımı 0.
-    return (ROS_ENV + "exec ros2 launch ros/launch/wall_follow.launch.py "
-            f"side:={side} v_scale:={v_scale} countdown:=0")
+    if (sb.get("mode") or "lane") == "wall":
+        return (ROS_ENV + "exec ros2 launch ros/launch/wall_follow.launch.py "
+                f"side:={side} v_scale:={v_scale} countdown:=0")
+    return (ROS_ENV + "exec ros2 launch ros/launch/lane_follow.launch.py "
+            f"v_scale:={v_scale} countdown:=0")
 
 
 def mock_keyboard(gpio, pin):

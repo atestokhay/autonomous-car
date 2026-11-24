@@ -27,7 +27,8 @@ imu:                   # BNO055 (I2C): odometride dönüş açısı (gyro). Bulu
 start_button:          # Başlat butonu: bir ayağı GPIO16'ya (pin 36), diğer ayağı GND'ye (pin 34). Direnç gerekmez.
   gpio: 16             # pin 36. Dahili pull-up: basılı = LOW
   delay_s: 5           # basıldıktan kaç sn sonra program başlar (geri sayımda tekrar basmak = iptal)
-  side: right          # takip edilecek duvar: right / left
+  mode: lane           # lane = şerit ortalama (yarışma, AC-3.5'e uygun) / wall = eski duvar takibi
+  side: right          # yalnızca mode: wall için: takip edilecek duvar right / left
   v_scale: 0.5         # hız ölçeği (ilk denemelerde 0.5; araç güvenilir olunca 1.0)
 
 lidar:
