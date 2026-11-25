@@ -6,7 +6,7 @@ Pin numaralarının tek kaynağı `software/config/pins.yaml` dosyasıdır; bu b
 
 ## 1. Donanım
 
-- Raspberry Pi 5
+- Raspberry Pi 5 (8 GB)
 - 2 × JGA12-N20B 6 V 300 RPM enkoderli DC motor (manyetik enkoder, motor milinde)
 - 1 × TB6612FNG çift kanallı motor sürücü (A kanalı = sol, B kanalı = sağ)
 - RPLIDAR S3 ve USB adaptörü
@@ -14,8 +14,8 @@ Pin numaralarının tek kaynağı `software/config/pins.yaml` dosyasıdır; bu b
 - 3S LiPo batarya (11,1 V nominal, 12,6 V tam dolu)
 - Motorlar için XL4015 5 A buck regülatör (6,0 V'a ayarlı). Ayarlanmamış XL4015'in çıkışı girişe eşit olabilir;
   ters kutup koruması yoktur.
-- Raspberry Pi için 5 V / 5 A USB-C DC-DC dönüştürücü
-- LiDAR için MP1584EN buck regülatör (5,0 V)
+- Raspberry Pi için 5,1 V / 5 A USB-C DC-DC dönüştürücü (gelene kadar 3 A'lık kullanılıyor)
+- LiDAR için MP1584EN buck regülatör (5,0 V, 3 A)
 - 10 A sigorta, ana şalter, güç dağıtım baraları (+11,1 V ve GND)
 
 ## 2. Güç bağlantıları
@@ -155,5 +155,5 @@ sayacı 0'dan büyükse bildirin.
 ## İlgili dosyalar
 
 - `netlist.txt` — bağlantıların metinsel listesi
-- `schematic.png` — öğrencilerin kurduğu kablolamanın şeması
+- `schematic.png` — güncel kablolama şeması (v3: XL4015, 10 A sigorta, JGA12-N20B)
 - `schematic.fzz` — Fritzing proje dosyası (**eski L298N düzenini gösterir, güncellenmeli**)

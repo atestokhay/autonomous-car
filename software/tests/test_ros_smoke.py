@@ -96,12 +96,12 @@ class RosSmokeTest(unittest.TestCase):
     def test_drive_node_moves_with_cmd(self):
         node = self.drive_mod.DriveNode(mock=True)
         cmd = Msg()
-        cmd.linear.x, cmd.angular.z = 0.25, 0.0
+        cmd.linear.x, cmd.angular.z = 0.10, 0.0   # 11 mm tekerlek: azami ~0,15 m/s
         for _ in range(300):
             node.on_cmd(cmd)
             node.tick()
             time.sleep(0.001)
-        self.assertGreater(node.drive.odom.x, 0.05)
+        self.assertGreater(node.drive.odom.x, 0.01)
         node.shutdown()
 
     def test_wall_follow_node_commands_and_stale_scan(self):

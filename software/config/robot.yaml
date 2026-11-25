@@ -5,17 +5,17 @@
 # JGA12-N20B 6 V 300 RPM enkoderli motor (N20 ailesi): manyetik enkoder MOTOR milinde, kanal başına 7 darbe/tur.
 # İki kanalın iki kenarı sayıldığı için (x4) motor turu başına 28 tick; tekerlek turu başına
 # 28 × dişli oranı (örn. 1:50 → 1400, 1:100 → 2800). Dişli oranı modele göre değiştiği için
-# boş bırakıldı (300 RPM'lik N20 genelde 1:50 → yaklaşık 1400 beklenir): aşama 3'te (`arac` → enkoder adımı) tekerlek elle 10 tur çevrilerek ölçülür ve buraya yazılır.
+# boş bırakıldı (300 RPM'lik N20 genelde 1:50 → yaklaşık 1400 beklenir): `arac` ilk çalıştırmada motorun boştaki hızından kendisi hesaplar (robot_cal.yaml).
 ticks_per_rev: null
 nominal_rpm: 300       # JGA12-N20B 6 V 300 RPM (etiket, boşta). Aşama 4 ölçülen hızı bununla karşılaştırır.
 
 # --- Gövde ---
-wheel_radius_m: null   # tekerlek yarıçapı (lastik dahil, cetvelle). Aşama 6 kalibrasyonu inceltir.
-wheel_base_m: null     # sol-sağ tekerleğin yere temas noktaları arası. Aşama 6 kalibrasyonu inceltir.
+wheel_radius_m: 0.0055 # tekerlek çapı 11 mm (lastik dahil)
+wheel_base_m: 0.118    # sol-sağ tekerleğin yere temas noktaları arası (11,8 cm)
 robot_radius_m: 0.15   # LiDAR merkezinden gövdenin EN UZAK noktasına mesafe (güvenlik hesabı için)
 
 # --- LiDAR montajı (base_link = iki tekerleğin ortası, x ileri, y sol) ---
 lidar_x_m: 0.0         # LiDAR merkezi, tekerlek ekseninden ne kadar ileride (geride ise negatif)
 lidar_y_m: 0.0         # sola pozitif
-lidar_yaw_deg: 0.0     # LiDAR'ın 0° ekseni aracın ilerisine bakıyorsa 0. Kabloya doğru bakıyorsa farkı yaz.
+lidar_yaw_deg: 0.0     # `arac` ilk çalıştırmada kısa bir ileri hareketle kendisi bulur ve robot_cal.yaml'a yazar (LiDAR kablosu arkaya bakıyor)
 lidar_inverted: false   # duvarlar sağ-sol AYNALI görünüyorsa true yap (notes/sorun-giderme.md)

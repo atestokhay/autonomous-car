@@ -2,8 +2,24 @@
 
 > **Öğrenci misin?** Kurulumdan sonra terminale sadece `arac` yaz. Aşağısı ayrıntılı başvuru içindir.
 
+## `arac` ne yapar (otomatik, soru sormaz)
+İlk çalıştırmada eksik değerleri kendisi ölçer, sonra duvar takibine **tam hızla** çıkar. Robot yerde,
+etrafında ~1 m boş yer ve sağ tarafında bir duvar olmalı. Ölçülen değerler saklanır; sonraki çalıştırmalarda
+doğrudan duvar takibi başlar. Durdurmak: `Ctrl+C`.
+
+| # | Adım | Ne olur | Yazdığı yer |
+|---|---|---|---|
+| 1 | Enkoder yönleri | Her motor yarım saniye döner | `config/pins.yaml` (encoders invert) |
+| 2 | Tur başına sayım, azami hız | Robot 2 sn yerinde tam hızla döner | `config/robot_cal.yaml`, `config/oto.yaml` |
+| 3 | PID ayarı | Robot birkaç dakika yerinde kısa dönüşler yapar | `config/tuned.yaml` |
+| 4 | LiDAR yönü | Robot 1,5 sn ileri gider, taramalardan "ön" bulunur | `config/robot_cal.yaml` |
+| 5 | Duvar takibi | Sağdaki duvarı tam hızla takip eder | — |
+
+`arac sifirla` ölçümleri siler (sonraki `arac` baştan ölçer). Eski adım adım sihirbaz: `arac rehber`.
+Sabit değerler: tekerlek çapı 11 mm, tekerlek aralığı 11,8 cm (`config/robot.yaml`); motor 300 RPM.
+
 Raspberry Pi 5 + RPLIDAR S3 + iki enkoderli motorla **duvar takibi yapan** otonom araç. Donanım bağlantıları
-`arac kablo` sihirbazında anlatılır; pinler `config/pins.yaml` dosyasından okunur (tek kaynak).
+`../hardware/wiring/schematic.png` şemasında; pinler `config/pins.yaml` dosyasından okunur (tek kaynak).
 
 > **Durum (dürüst özet):** Kodun tamamı simülasyonda ve birim testlerinde (46 test) doğrulandı. **Gerçek robotta,
 > gerçek Pi 5'te ve gerçek ROS 2'de henüz çalıştırılmadı.** Bu yüzden aşamalar sırayla, her birinin "Bitti sayılır"
@@ -54,6 +70,8 @@ notes/     kurulum, sorun giderme, kavramlar
 
 ## Komut özeti
 ```bash
+arac                                                            # her şeyi otomatik: ölç + duvar takibi
+arac sifirla                                                    # ölçümleri sil
 python3 stages/02-motor/run.py --side left --duty 0.3          # aşama 2
 python3 stages/03-enkoder/run.py watch                          # aşama 3
 python3 stages/04-pid/autotune.py                               # aşama 4 (tek komut)

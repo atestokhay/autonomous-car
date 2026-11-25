@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Rehberli çalıştırma: aşamaları SIRAYLA yapar, her adımı açıklar, güvenlik sorar, sonucu kontrol eder.
-Kendi kaldığı yeri hatırlar. Başlatmak için:   arac
+Kendi kaldığı yeri hatırlar. Başlatmak için:   arac rehber   (sadece `arac` = otomatik çalıştırma, otomatik.py)
 Deneme (donanımsız):  python3 calistir.py --mock"""
 import json
 import os
@@ -236,6 +236,16 @@ STEPS = [
 
 
 def main():
+    args = [a for a in sys.argv[1:] if a != "--mock"]
+    if not args or args[0] == "sifirla":
+        import otomatik            # `arac` = soru sormadan ölç ve duvar takibine çık
+        try:
+            return otomatik.main()
+        except KeyboardInterrupt:
+            return say("\nDurduruldu.", "y")
+    if args[0] != "rehber":        # `arac rehber` = eski adım adım sihirbaz
+        if args[0] not in ("kablo", "acil"):
+            return say("Kullanım: arac | arac sifirla | arac kablo | arac acil | arac rehber")
     if len(sys.argv) > 1 and sys.argv[1] == "kablo":
         kablolama.tablo_goster()
         return

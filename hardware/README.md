@@ -22,8 +22,8 @@ Amaç yalnızca parçaları birbirine bağlamak değil; her bağlantının neden
 | BNO055 9 eksen IMU | 1 | Yönelim ölçümü (I2C, şu an yazılımda kullanılmıyor) |
 | 3S LiPo batarya, 11,1 V nominal | 1 | Ana güç kaynağı |
 | XL4015 5 A buck regülatör (6,0 V'a ayarlı) | 1 | Motor beslemesi |
-| MP1584EN buck regülatör | 1 | LiDAR için 5,0 V besleme |
-| 6–24 V → 5 V / 5 A USB-C DC-DC dönüştürücü | 1 | Raspberry Pi beslemesi |
+| MP1584EN buck regülatör (3 A) | 1 | LiDAR için 5,0 V besleme |
+| USB-C DC-DC dönüştürücü, 5,1 V / 5 A | 1 | Raspberry Pi beslemesi (gelene kadar 3 A'lık) |
 | Ana şalter ve 10 A DC sigorta | 1'er | Güç kesme ve aşırı akım koruması |
 | Güç dağıtım klemensleri | İhtiyaca göre | Güç hatlarının dağıtımı |
 | Kablo, konektör ve bağlantı elemanları | İhtiyaca göre | Elektriksel ve mekanik bağlantılar |

@@ -1,9 +1,10 @@
+import os
 from pathlib import Path
 
 import yaml
 
 SOFTWARE_DIR = Path(__file__).resolve().parents[2]
-CONFIG_DIR = SOFTWARE_DIR / "config"
+CONFIG_DIR = Path(os.environ.get("ARAC_CONFIG_DIR") or SOFTWARE_DIR / "config")
 
 
 def load_config():
@@ -15,6 +16,13 @@ def load_config():
     if cal.exists():
         with open(cal, encoding="utf-8") as f:
             cfg["robot"].update({k: v for k, v in (yaml.safe_load(f) or {}).items() if not k.startswith("_")})
+    oto = CONFIG_DIR / "oto.yaml"              # otomatik.py ölçümleri (hız sınırları) en üste biner
+    if oto.exists():
+        with open(oto, encoding="utf-8") as f:
+            o = yaml.safe_load(f) or {}
+        for sec in ("robot", "pid"):
+            cfg[sec].update(o.get(sec) or {})
+        cfg["nav"]["wall_follow"].update((o.get("nav") or {}).get("wall_follow") or {})
     tuned = CONFIG_DIR / "tuned.yaml"          # autotune çıktısı pid.yaml'ın üstüne biner
     if tuned.exists():
         with open(tuned, encoding="utf-8") as f:
