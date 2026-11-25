@@ -27,13 +27,39 @@ def box(x, y, th, L=0.20, Wd=0.15):
     return [(*pts[i], *pts[(i + 1) % 4]) for i in range(4)]
 
 
-def sim(name, starts, seconds=180.0, rr=0.125, v_max=None, seed=1, out=None):
+def _corners(r, L=0.20, Wd=0.15):
+    c, s = math.cos(r.th), math.sin(r.th)
+    return [(r.x + c * dx - s * dy, r.y + s * dx + c * dy) for dx, dy in
+            [(L/2, Wd/2), (-L/2, Wd/2), (-L/2, -Wd/2), (L/2, -Wd/2)]]
+
+
+def boxes_touch(a, b):
+    """İki 20x15 cm gövde temas ediyor mu (ayırıcı eksen testi)."""
+    pa, pb = _corners(a), _corners(b)
+    for poly in (pa, pb):
+        for i in range(4):
+            x1, y1 = poly[i]; x2, y2 = poly[(i + 1) % 4]
+            nx, ny = y1 - y2, x2 - x1
+            A = [nx * x + ny * y for x, y in pa]; B = [nx * x + ny * y for x, y in pb]
+            if max(A) < min(B) or max(B) < min(A):
+                return False
+    return True
+
+
+def sim(name, starts, seconds=180.0, rr=0.125, v_max=None, seed=1, out=None, params=None):
+    """params: robot başına nav.yaml lane_follow üzerine yazılacak ayarlar listesi (ör. rakibe düşük hız)."""
     rng = random.Random(seed)
     cfg = load_config()
     p = dict(cfg["nav"]["lane_follow"])
     if v_max:
         p["v_max"] = v_max
-    bots = [(SimRobot(*s), LaneFollower(p, rr)) for s in starts]
+    bots = []
+    for k, st in enumerate(starts):
+        pk = dict(p)
+        if params and k < len(params) and params[k]:
+            pk.update(params[k])
+        bots.append((SimRobot(*st), LaneFollower(pk, rr)))
+    contact = 0
     cmds = [(0.0, 0.0)] * len(bots)
     traces = [[] for _ in bots]; laps = [0] * len(bots); back = [0] * len(bots)
     min_clear = [math.inf] * len(bots); bump = [0] * len(bots); prev = [None] * len(bots)
@@ -64,13 +90,16 @@ def sim(name, starts, seconds=180.0, rr=0.125, v_max=None, seed=1, out=None):
             for b in range(a + 1, len(bots)):
                 ra, rb = bots[a][0], bots[b][0]
                 rr_min = min(rr_min, math.hypot(ra.x - rb.x, ra.y - rb.y))
+                if boxes_touch(ra, rb):
+                    contact += 1
         t += dt
-    res = {"laps": laps, "back": back, "min_clear": min_clear, "bump_s": [b * dt for b in bump], "rr_min": rr_min}
+    res = {"laps": laps, "back": back, "min_clear": min_clear, "bump_s": [b * dt for b in bump], "rr_min": rr_min,
+           "contact_s": contact * dt}
     for k in range(len(bots)):
         print(f"{name} robot{k+1}: lap={laps[k]}  ters_gecis={back[k]}  en_yakin_duvar={min_clear[k]*100:.1f} cm "
               f"(govde {rr*100:.1f} cm)  duvar_temas_suresi={bump[k]*dt:.1f} s")
     if len(bots) > 1:
-        print(f"{name}: robotlar arasi en kucuk merkez mesafesi={rr_min*100:.1f} cm (20x15 cm govdelerde <15 cm temas demek)")
+        print(f"{name}: robotlar arasi en kucuk merkez mesafesi={rr_min*100:.1f} cm, robot-robot temas suresi={contact*dt:.1f} s")
     if out is None:                      # testlerde grafik yazma
         return res
     try:

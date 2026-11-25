@@ -64,3 +64,27 @@ lane_follow:
   w_turn: 1.5              # sonra yerinde açık tarafa dön
   recover_clear_m: 0.40
   recover_max_s: 3.0
+  # robot tanıma ve sollama (Faz 1)
+  robot_detect: true
+  cluster_gap_m: 0.06      # bu mesafeden uzak komşu noktalar ayrı küme
+  robot_max_m: 0.30        # bundan kısa ve iki yanından yakın küme = robot
+  robot_min_pts: 3
+  depth_jump_m: 0.08       # robot kümesi iki yanındaki noktalardan en az bu kadar yakın olmalı
+  robot_half_m: 0.075      # rakip gövde yarı genişliği (şartname 15 cm)
+  robot_margin_m: 0.04     # rakibe bırakılan ek pay
+  follow_look_m: 1.0       # bu mesafeye kadar yol üzerindeki robot dikkate alınır
+  pass_half_deg: 80        # sollama yönü yol yönünün bu kadar sağı/solu içinde aranır
+  pass_beyond_m: 0.25      # sollama yönü robotun bu kadar ötesine kadar açık olmalı
+  follow_dist_m: 0.25      # sollanamıyorsa korunacak mesafe
+  k_follow: 1.0
+  wait_robot_max_s: 3.0    # önü robotla kapalıysa bu kadar bekle, sonra kısa geri git
+  # ters yöne dönmeme
+  travel_len_m: 0.5        # gidiş yönü bu kadar yol gidildikçe güncellenir
+  max_dev_free_deg: 120    # gidiş yönünden en fazla sapma
+  max_dev_deg: 70          # sollarken en fazla sapma
+  trav_bias: 0.15          # gidiş yönüne yakın açık yön tercihi
+  pass_closing_mps: 0.03   # rakibe bu hızdan hızlı yaklaşılıyorsa sollamaya karar ver
+  pass_wait_s: 1.0         # ya da takipte bu kadar süre yavaş kalındıysa (hız < slow_frac x v_max)
+  slow_frac: 0.7
+  back_s: 1.0              # robot kilitlenmesinde geri gitme süresi
+  v_back: 0.08
