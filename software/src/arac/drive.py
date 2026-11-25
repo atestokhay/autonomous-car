@@ -16,8 +16,9 @@ class DriveController:
     def set_cmd(self, v, w, now):
         self._v, self._w, self._cmd_t = float(v), float(w), now
 
-    def update(self, dt, now):
-        """Bir kontrol adımı. Döner: (x, y, th, v, w). Tekerlek güvenliği RuntimeError fırlatabilir."""
+    def update(self, dt, now, heading=None):
+        """Bir kontrol adımı. Döner: (x, y, th, v, w). Tekerlek güvenliği RuntimeError fırlatabilir.
+        heading: IMU açısı (rad) ya da None (açı enkoderden)."""
         self.stale = self._cmd_t is None or (now - self._cmd_t) > self.cmd_timeout
         v, w = (0.0, 0.0) if self.stale else (self._v, self._w)
         wl, wr = self.kin.twist_to_wheels(v, w)
@@ -26,7 +27,7 @@ class DriveController:
         self.right.set_target(wr)
         self.left.update(dt)
         self.right.update(dt)
-        x, y, th = self.odom.update(self.left.encoder.count, self.right.encoder.count, dt)
+        x, y, th = self.odom.update(self.left.encoder.count, self.right.encoder.count, dt, heading)
         # Anlık odometri hızı tek enkoder darbesine kuantalıdır; filtreli tekerlek hızlarını kullan.
         self.v, self.w = self.kin.wheels_to_twist(self.left.speed, self.right.speed)
         return x, y, th, self.v, self.w

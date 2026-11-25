@@ -5,9 +5,10 @@
 # N20 6 V enkoderli motor: manyetik enkoder MOTOR milinde, kanal başına 7 darbe/tur.
 # İki kanalın iki kenarı sayıldığı için (x4) motor turu başına 28 tick; tekerlek turu başına
 # 28 × dişli oranı (örn. 1:30 → 840, 1:50 → 1400). Dişli oranı modele göre değiştiği için
-# boş bırakıldı (450 RPM'lik N20 genelde 1:30 → yaklaşık 840 beklenir): aşama 3'te (`arac` → enkoder adımı) tekerlek elle 10 tur çevrilerek ölçülür ve buraya yazılır.
+# boş bırakıldı (300 RPM'lik N20 genelde 1:50 → yaklaşık 1400 beklenir; bazı satıcılarda 1:100 → 2800):
+# aşama 3'te (`arac` → enkoder adımı) tekerlek elle 10 tur çevrilerek ölçülür ve buraya yazılır.
 ticks_per_rev: null
-nominal_rpm: 450       # N20 6 V 450 RPM (etiket, boşta). Aşama 4 ölçülen hızı bununla karşılaştırır.
+nominal_rpm: 300       # N20 6 V 300 RPM (etiket, boşta). Aşama 4 ölçülen hızı bununla karşılaştırır.
 
 # --- Gövde ---
 wheel_radius_m: null   # tekerlek yarıçapı (lastik dahil, cetvelle). Aşama 6 kalibrasyonu inceltir.

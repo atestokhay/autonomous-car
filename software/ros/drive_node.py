@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """ROS 2 sürüş düğümü: /cmd_vel (geometry_msgs/Twist) -> iki tekerlek PID -> /odom + TF (odom->base_link).
-KOMUT 0,5 sn gelmezse araç durur. Hata/Ctrl+C'de motorlar durdurulur.
+Odometride mesafe enkoderden, dönüş açısı BNO055 gyro'dan (pins.yaml imu.use_for_heading; IMU yoksa ya da
+okunamazsa otomatik olarak enkoderden). KOMUT 0,5 sn gelmezse araç durur. Hata/Ctrl+C'de motorlar durdurulur.
 Çalıştır: source /opt/ros/jazzy/setup.bash && python3 ros/drive_node.py [--mock]"""
 import argparse
 import math
@@ -17,6 +18,7 @@ from tf2_ros import TransformBroadcaster  # noqa: E402
 
 from arac.config import load_config  # noqa: E402
 from arac.factory import build_drive, close_hardware  # noqa: E402
+from arac.imu import open_imu  # noqa: E402
 from arac.loop import try_realtime  # noqa: E402
 
 
@@ -26,6 +28,9 @@ class DriveNode(Node):
         cfg = load_config()
         self.hz = cfg["pid"]["loop_hz"]
         self.gpio, self.parts, self.drive = build_drive(cfg, mock)
+        self.imu, imu_msg = (None, "deneme modu: IMU yok, açı enkoderden") if mock else open_imu(cfg)
+        self.imu_errors = 0
+        (self.get_logger().info if self.imu else self.get_logger().warning)(imu_msg)
         self.sub = self.create_subscription(Twist, "cmd_vel", self.on_cmd, 10)
         self.pub = self.create_publisher(Odometry, "odom", 10)
         self.tf = TransformBroadcaster(self)
@@ -43,8 +48,9 @@ class DriveNode(Node):
         dt, self.last = now - self.last, now
         if dt <= 0.0:
             return
+        heading = self.read_heading()
         try:
-            x, y, th, v, w = self.drive.update(dt, now)
+            x, y, th, v, w = self.drive.update(dt, now, heading)
         except RuntimeError as e:
             self.get_logger().error(f"DURDU: {e}")
             self.shutdown()
@@ -72,11 +78,35 @@ class DriveNode(Node):
         t.transform.rotation.z, t.transform.rotation.w = qz, qw
         self.tf.sendTransform(t)
 
+    def read_heading(self):
+        """IMU açısı ya da None. Arka arkaya 20 okuma hatasında IMU bırakılır, açı enkoderden devam eder."""
+        if self.imu is None:
+            return None
+        try:
+            h = self.imu.yaw()
+            self.imu_errors = 0
+            return h
+        except Exception as e:  # noqa: BLE001  (I2C hatası motor kontrolünü DURDURMAMALI)
+            self.imu_errors += 1
+            if self.imu_errors >= 20:
+                self.get_logger().error(f"BNO055 okunamıyor ({e}): açı artık ENKODERDEN hesaplanıyor")
+                self.close_imu()
+            return None
+
+    def close_imu(self):
+        if self.imu is not None:
+            try:
+                self.imu.close()
+            except Exception:  # noqa: BLE001
+                pass
+            self.imu = None
+
     def shutdown(self):
         try:
             self.drive.stop()
         finally:
             close_hardware(self.gpio, self.parts)
+            self.close_imu()
 
 
 def main():

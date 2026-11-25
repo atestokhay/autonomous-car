@@ -31,3 +31,60 @@ wall_follow:
   v_arc: 0.18
   arc_max_s: 8.0
   v_search: 0.20
+
+# Şerit ortalama + boşluk takibi (Fibonacci Autonomous Car pisti). Duvar takibi DEĞİLDİR (şartname AC-3.5):
+# tek duvarı referans almaz; gövde genişliğinde en uzun açık koridora yönelir, düzlükte iki duvarın ortasında kalır.
+# Yön: araç başlangıç çizgisine hakemin söylediği yöne bakacak şekilde konur; ayrıca sağ/sol ayarı gerekmez.
+lane_follow:
+  v_max: 0.30              # m/s (v_scale ile çarpılır)
+  v_min: 0.08
+  w_max: 2.5               # rad/s
+  max_accel: 0.8           # m/s^2
+  max_alpha: 6.0           # rad/s^2
+  # gövde (şartname: en fazla 20 x 15 cm). LiDAR gövdenin ortasında varsayıldı; değilse ölçüp düzelt.
+  half_width_m: 0.075      # gövde genişliğinin yarısı
+  front_len_m: 0.10        # LiDAR merkezinden gövde önüne
+  side_margin_m: 0.05      # koridor hesabında iki yana ek pay
+  # boşluk takibi
+  look_m: 1.5              # bundan uzağı "açık" sayılır
+  search_half_deg: 100     # aday yönler: -100..+100 derece
+  step_deg: 5
+  straight_bias: 0.15      # düz gitmeyi hafif tercih (m / rad)
+  kh: 2.0                  # yön kazancı
+  # şerit ortalama (iki yanda da duvar varken)
+  side_half_deg: 20
+  lane_max_m: 0.50         # yan mesafe bundan küçükse "şerit duvarı" sayılır (şerit 60-80 cm)
+  kc: 1.5
+  max_center_rad: 0.35
+  slow_dist_m: 0.60        # önde engel bu kadar yakınsa yavaşla
+  # güvenlik / sıkışma
+  front_stop_half_deg: 60  # yalnızca bu ön sektördeki yakın engel durdurur
+  hard_margin_m: 0.03
+  wait_max_s: 3.0          # önü kapalıysa (ör. önde robot) önce bu kadar bekle
+  w_turn: 1.5              # sonra yerinde açık tarafa dön
+  recover_clear_m: 0.40
+  recover_max_s: 3.0
+  # robot tanıma ve sollama (Faz 1)
+  robot_detect: true
+  cluster_gap_m: 0.06      # bu mesafeden uzak komşu noktalar ayrı küme
+  robot_max_m: 0.30        # bundan kısa ve iki yanından yakın küme = robot
+  robot_min_pts: 3
+  depth_jump_m: 0.08       # robot kümesi iki yanındaki noktalardan en az bu kadar yakın olmalı
+  robot_half_m: 0.075      # rakip gövde yarı genişliği (şartname 15 cm)
+  robot_margin_m: 0.04     # rakibe bırakılan ek pay
+  follow_look_m: 1.0       # bu mesafeye kadar yol üzerindeki robot dikkate alınır
+  pass_half_deg: 80        # sollama yönü yol yönünün bu kadar sağı/solu içinde aranır
+  pass_beyond_m: 0.25      # sollama yönü robotun bu kadar ötesine kadar açık olmalı
+  follow_dist_m: 0.25      # sollanamıyorsa korunacak mesafe
+  k_follow: 1.0
+  wait_robot_max_s: 3.0    # önü robotla kapalıysa bu kadar bekle, sonra kısa geri git
+  # ters yöne dönmeme
+  travel_len_m: 0.5        # gidiş yönü bu kadar yol gidildikçe güncellenir
+  max_dev_free_deg: 120    # gidiş yönünden en fazla sapma
+  max_dev_deg: 70          # sollarken en fazla sapma
+  trav_bias: 0.15          # gidiş yönüne yakın açık yön tercihi
+  pass_closing_mps: 0.03   # rakibe bu hızdan hızlı yaklaşılıyorsa sollamaya karar ver
+  pass_wait_s: 1.0         # ya da takipte bu kadar süre yavaş kalındıysa (hız < slow_frac x v_max)
+  slow_frac: 0.7
+  back_s: 1.0              # robot kilitlenmesinde geri gitme süresi
+  v_back: 0.08

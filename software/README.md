@@ -2,10 +2,11 @@
 
 > **Öğrenci misin?** Kurulumdan sonra terminale sadece `arac` yaz. Aşağısı ayrıntılı başvuru içindir.
 
-Raspberry Pi 5 + RPLIDAR S3 + iki enkoderli motorla **duvar takibi yapan** otonom araç. Donanım bağlantıları
+Raspberry Pi 5 (8 GB) + RPLIDAR S3 + iki enkoderli N20 6 V 300 RPM motor (TB6612FNG) + BNO055 gyro ile **duvar takibi yapan** otonom araç.
+Güç: 3S LiPo → 10 A sigorta → şalter → motor için 6 V / 5 A, Pi ve LiDAR için birer 5 V / 3 A buck regülatör. Donanım bağlantıları
 `arac kablo` sihirbazında anlatılır; pinler `config/pins.yaml` dosyasından okunur (tek kaynak).
 
-> **Durum (dürüst özet):** Kodun tamamı simülasyonda ve birim testlerinde (46 test) doğrulandı. **Gerçek robotta,
+> **Durum (dürüst özet):** Kodun tamamı simülasyonda ve birim testlerinde (76 test) doğrulandı. **Gerçek robotta,
 > gerçek Pi 5'te ve gerçek ROS 2'de henüz çalıştırılmadı.** Bu yüzden aşamalar sırayla, her birinin "Bitti sayılır"
 > kriteri sağlanarak ilerlenir. Takıldığın yerde önce `notes/sorun-giderme.md`'ye bak.
 
@@ -29,7 +30,7 @@ Raspberry Pi 5 + RPLIDAR S3 + iki enkoderli motorla **duvar takibi yapan** otono
 | 3 | `stages/03-enkoder` | Enkoder yönü ve tick/tur doğrulaması | Evet |
 | 4 | `stages/04-pid` | Hız PID **otomatik ayar**, adım testi | Evet, tekerlekler havada |
 | 5 | `stages/05-lidar` | LiDAR bağlantısı, `/scan` kontrolü | Evet (LiDAR) |
-| 6 | `stages/06-odometri` | Tekerlek yarıçapı/mesafesi kalibrasyonu, sürüş düğümü | Evet |
+| 6 | `stages/06-odometri` | Tekerlek yarıçapı/mesafesi kalibrasyonu, BNO055 yön kontrolü, sürüş düğümü | Evet |
 | 7 | `stages/07-duvar-takibi` | Duvar takibi (önce simülasyon, sonra robot) | Evet, açık alan |
 | 8 | `stages/08-slam` | (İsteğe bağlı) SLAM ile harita çıkarma | Evet |
 
@@ -38,6 +39,7 @@ Raspberry Pi 5 + RPLIDAR S3 + iki enkoderli motorla **duvar takibi yapan** otono
 config/    pins.yaml (pinler, tek kaynak) · robot.yaml (ölçüler) · pid.yaml · nav.yaml (duvar takibi) · slam_toolbox.yaml
            tuned.yaml ve robot_cal.yaml: kalibrasyon scriptleri BU robot için üretir, varsayılanların üstüne biner
 src/arac/  motor, encoder, pid, wheel (tekerlek hız döngüsü), drive (v,w -> tekerlekler), kinematics (+odometri),
+           imu (BNO055: odometride dönüş açısı; yoksa enkoder),
            scan + wall_follow (duvar takibi), autotune, sim*/ (donanımsız test modelleri)
 ros/       drive_node.py · wall_follow_node.py · scan_check.py · launch/ (bringup, wall_follow, slam)
 stages/    aşama README'leri ve çalıştırılabilir scriptler
@@ -59,6 +61,9 @@ python3 stages/03-enkoder/run.py watch                          # aşama 3
 python3 stages/04-pid/autotune.py                               # aşama 4 (tek komut)
 python3 stages/05-lidar/check_lidar.py                          # aşama 5
 python3 stages/06-odometri/calibrate.py radius                  # aşama 6
+python3 stages/06-odometri/check_imu.py yon                     # aşama 6 (BNO055 yönü)
+python3 tools/baslat_butonu.py test                             # başlat butonu kablolama testi
+bash tools/buton_servis_kur.sh                                  # buton: basınca 5 sn sonra duvar takibi
 python3 stages/07-duvar-takibi/sim_demo.py --world blok --side left   # aşama 7 (robotsuz)
 ros2 launch ros/launch/wall_follow.launch.py side:=right v_scale:=0.5 # aşama 7 (robotla)
 ```

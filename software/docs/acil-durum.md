@@ -64,8 +64,8 @@ Güç kesildikten sonra, **tekerlekler havada**, şu sırayla bak:
 2. Bataryayı tak, şalter açık, motorlar boşta (tekerlek havada):
    - Batarya: ≈ 10,5–12,6 V (3S)
    - Motor buck çıkışı: **≈ 6,0 V** (6,2 V üstü olmamalı; TB6612 kaybı küçüktür, motor terminalinde tam duty'de ≈ 5,5–6 V)
-   - Pi regülatörü çıkışı: **5,0–5,2 V**
-   - MP1584EN çıkışı: **4,9–5,2 V** (hedef 5,00), LiDAR bağlanmadan ve bağlıyken yeniden ölç
+   - Pi regülatörü (3 A buck) çıkışı: **5,0–5,2 V** (hedef 5,1; Pi'ye USB-C güç kablosuyla gider)
+   - LiDAR regülatörü (3 A buck) çıkışı: **4,9–5,2 V** (hedef 5,00), LiDAR bağlanmadan ve bağlıyken yeniden ölç
 3. Sigorta: bu sistemde **10 A** otomotiv/DC sigorta, bataryaya en yakın eleman. (Motor buck ve TB6612'nin kendi akım
    sınırlarına göre öğretmeninle doğrula; sigorta, en zayıf kablo/regülatörden küçük olmalı.)
 
@@ -88,10 +88,14 @@ Aşağıdaki adımlarda bu rapordaki satırlara atıf yapılır.
 **Belirti:** Pi kapanıyor, motor çalışınca resetliyor, LiDAR dönmüyor.
 1. Bataryayı ölç (≥ 10,5 V). Düşükse şarj et. (Bu en sık neden.)
 2. Şalter + sigorta çıkışında gerilim var mı?
-3. Motor buck 6,0 V, Pi regülatörü 5,0–5,2 V, MP1584EN 4,9–5,2 V (A6).
+3. Motor buck 6,0 V, Pi regülatörü 5,0–5,2 V (hedef 5,1), LiDAR regülatörü 4,9–5,2 V (A6).
 4. Motorlar çalışırken yeniden ölç: Pi 5 V hattı **düşüyor mu?** Düşüyorsa kablo ince/gevşek, ortak GND kötü, ya da regülatör akım yetmiyor.
 5. `vcgencmd get_throttled` → `0x0`. Değilse güç sorunu var (`dmesg | grep -i under`).
-6. Ortak GND: Pi GND ↔ TB6612 GND ↔ motor buck OUT− ↔ GND bara ↔ MP1584EN GND ↔ enkoder GND arasında süreklilik (bip).
+   Pi regülatörü 3 A'liktir: Pi 5 yük altında buna yakın akım çekebilir. Regülatör çok ısınıyor ya da yükte
+   5,0 V'un altına düşüyorsa daha güçlü (5 A) bir regülatör gerekir. 3 A beslemede Pi 5, USB portlarına toplam
+   600 mA verir; bu projede USB'den sadece LiDAR adaptörünün veri hattı beslendiği için yeterlidir
+   (USB'ye disk, kamera gibi güç çeken bir şey takma).
+6. Ortak GND: Pi GND ↔ TB6612 GND ↔ motor buck OUT− ↔ GND bara ↔ LiDAR regülatörü GND ↔ Pi regülatörü GND ↔ enkoder GND arasında süreklilik (bip).
 
 **Geçti:** Motorlar yüklüyken Pi resetlenmiyor, `get_throttled` = `0x0`.
 
@@ -172,7 +176,7 @@ id                                  # gpio ve dialout grubunda mısın
 |---|---|
 | Seri aygıt yok (`/dev/ttyUSB0`) | 1) USB kablosu **veri** kablosu mu (sadece şarj kablosu olmasın)  2) adaptör takılı  3) `lsusb`, `dmesg \| tail`  4) port numarası farklı olabilir (`ttyUSB1`) |
 | Permission denied | `dialout` grubu (B4), çıkış-giriş |
-| LiDAR dönmüyor | 1) MP1584EN çıkışı 4,9–5,2 V ve **yük altında** düşmüyor  2) adaptörün harici güç girişi doğru kutupta  3) USB VBUS ile harici 5 V **paralel değil** |
+| LiDAR dönmüyor | 1) LiDAR regülatörü çıkışı 4,9–5,2 V ve **yük altında** düşmüyor  2) adaptörün harici güç girişi doğru kutupta  3) USB VBUS ile harici 5 V **paralel değil** |
 | Cevap yok | Baud 1 000 000 (S3); başka adaptör modu (sw1 ayarı varsa) ; kablo |
 | Sağlık HATA | Gücü kes-ver, lens temiz mi, motor engelsiz mi |
 | ROS'ta `/scan` yok | `ros2 topic list`, `ros2 pkg executables sllidar_ros2` (sllidar_node var mı), `source ~/ros2_ws/install/setup.bash` |
@@ -208,7 +212,7 @@ Yazılım testleri geçip donanım testleri geçmiyorsa **sorun donanım/kabloda
 1. `diag_rapor.txt` (B0)
 2. Hangi aşama / hangi komut / ekrandaki **tam** hata çıktısı
 3. Fotoğraf: kablolama (yakından, etiketli), güç kısmı
-4. Ölçtüğün gerilimler (batarya, motor regülatörü, Pi 5 V, MP1584EN 5 V)
+4. Ölçtüğün gerilimler (batarya, motor regülatörü, Pi regülatörü 5 V, LiDAR regülatörü 5 V)
 5. Son değiştirdiğin şey (ayar, kablo, parça)
 
 ## B13. Geri alma (hiçbir şey çalışmıyorsa)

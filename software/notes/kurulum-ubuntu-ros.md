@@ -16,13 +16,18 @@ sudo reboot
 ## 2) Temel paketler
 ```bash
 sudo apt install -y git python3-pip python3-yaml python3-serial python3-numpy python3-matplotlib \
-    python3-lgpio gpiod libraspberrypi-bin
+    python3-lgpio gpiod libraspberrypi-bin i2c-tools
 sudo groupadd -f gpio
-sudo usermod -aG dialout,gpio $USER
+sudo groupadd -f i2c
+sudo usermod -aG dialout,gpio,i2c $USER
+# BNO055 için I2C: satır yoksa ekle (Ubuntu'da genelde zaten açıktır)
+grep -q '^dtparam=i2c_arm=on' /boot/firmware/config.txt || echo 'dtparam=i2c_arm=on' | sudo tee -a /boot/firmware/config.txt
 echo 'SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"' | sudo tee /etc/udev/rules.d/99-gpio.rules
+echo 'KERNEL=="i2c-[0-9]*", GROUP="i2c", MODE="0660"' | sudo tee /etc/udev/rules.d/99-i2c.rules
 sudo udevadm control --reload-rules && sudo udevadm trigger
 # ÇIKIŞ YAP ve tekrar gir (ya da sudo reboot)
 ```
+Kontrol: `ls /dev/i2c-1` var olmalı; BNO055 takılıysa `i2cdetect -y 1` çıktısında `28` görünür.
 Kontrol: `gpiodetect` çıktısında `pinctrl-rp1` olmalı (numara 0 ya da 4 olabilir, kod kendisi bulur). (`RPi.GPIO` Pi 5'te ÇALIŞMAZ; kod `lgpio` kullanır.)
 
 ## 3) ROS 2 Jazzy
