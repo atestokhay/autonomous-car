@@ -2,7 +2,7 @@
 wall_follow:
   side: right              # right | left : hangi tarafındaki duvarı takip edecek
   target_dist_m: 0.40      # duvara hedef mesafe (araç merkezinden)
-  v_max: 0.30              # ilk denemelerde düşük tut; güvenle çalışınca artır
+  v_max: 0.20              # ilk denemelerde düşük tut; güvenle çalışınca artır
   v_min: 0.10
   w_max: 1.2               # rad/s
   max_accel: 0.8           # m/s^2 (komut yumuşatma)

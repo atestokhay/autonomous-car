@@ -100,7 +100,9 @@ def regulatorleri_ayarla():
     say("Multimetreyi gerilim (V, düz çizgi =) konumuna al; kırmızı prob regülatör OUT+, siyah prob OUT−.\n"
         "Regülatör üzerindeki küçük vidayı küçük tornavidayla yavaşça çevirerek ayarla.")
     m = ask_float("MOTOR BUCK çıkışını 6,0 V yapacak şekilde ayarla. Ölçtüğün gerilim", 5.8, 6.2, "motor_regulator_V",
-                  "Vidayı çevirip 6,0 V'a getir; 6,2 V üstüne ÇIKMA (N20 motorlar 6 V'luktur).")
+                  "Vidayı çevirip 6,0 V'a getir; 6,2 V üstüne ÇIKMA (N20 motorlar 6 V'luktur).\n"
+                  "   XL4015 yeni geldiyse çıkışı girişe eşit olabilir: gerilim düşmüyorsa trimpotu\n"
+                  "   saat yönünün TERSİNE 20 turdan fazla çevir, sonra yavaşça 6,0 V'a getir.")
     if m is None:
         return False
     pdc = ask_float("Pi DC-DC çıkışını (5,0–5,2 V) ölç ve yaz", 5.0, 5.2, "pi_dcdc_V",

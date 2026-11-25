@@ -16,12 +16,12 @@ Amaç yalnızca parçaları birbirine bağlamak değil; her bağlantının neden
 | Bileşen | Adet | Görev |
 |---|---:|---|
 | Raspberry Pi 5 | 1 | Ana bilgisayar ve kontrol |
-| N20 6 V enkoderli DC motor | 2 | Tahrik sistemi |
+| JGA12-N20B 6 V 300 RPM enkoderli DC motor | 2 | Tahrik sistemi |
 | TB6612FNG çift kanallı motor sürücü | 1 | Motor yönü ve PWM kontrolü (A = sol, B = sağ) |
 | RPLIDAR S3 + USB adaptörü | 1 | Lazer tabanlı mesafe algılama |
 | BNO055 9 eksen IMU | 1 | Yönelim ölçümü (I2C, şu an yazılımda kullanılmıyor) |
 | 3S LiPo batarya, 11,1 V nominal | 1 | Ana güç kaynağı |
-| Buck regülatör, 6,0 V / en az 5 A | 1 | Motor beslemesi |
+| XL4015 5 A buck regülatör (6,0 V'a ayarlı) | 1 | Motor beslemesi |
 | MP1584EN buck regülatör | 1 | LiDAR için 5,0 V besleme |
 | 6–24 V → 5 V / 5 A USB-C DC-DC dönüştürücü | 1 | Raspberry Pi beslemesi |
 | Ana şalter ve 10 A DC sigorta | 1'er | Güç kesme ve aşırı akım koruması |

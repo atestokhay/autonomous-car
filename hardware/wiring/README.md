@@ -7,12 +7,13 @@ Pin numaralarının tek kaynağı `software/config/pins.yaml` dosyasıdır; bu b
 ## 1. Donanım
 
 - Raspberry Pi 5
-- 2 × N20 6 V enkoderli DC motor (manyetik enkoder, motor milinde)
+- 2 × JGA12-N20B 6 V 300 RPM enkoderli DC motor (manyetik enkoder, motor milinde)
 - 1 × TB6612FNG çift kanallı motor sürücü (A kanalı = sol, B kanalı = sağ)
 - RPLIDAR S3 ve USB adaptörü
 - BNO055 9 eksen IMU (I2C, adres 0x28)
 - 3S LiPo batarya (11,1 V nominal, 12,6 V tam dolu)
-- Motorlar için buck regülatör (6,0 V, en az 5 A)
+- Motorlar için XL4015 5 A buck regülatör (6,0 V'a ayarlı). Ayarlanmamış XL4015'in çıkışı girişe eşit olabilir;
+  ters kutup koruması yoktur.
 - Raspberry Pi için 5 V / 5 A USB-C DC-DC dönüştürücü
 - LiDAR için MP1584EN buck regülatör (5,0 V)
 - 10 A sigorta, ana şalter, güç dağıtım baraları (+11,1 V ve GND)
@@ -137,7 +138,7 @@ IMU şu an yazılımda kullanılmıyor; I2C'nin açık olması (`dtparam=i2c_arm
 pull-up direnci olmadığı doğrulanmalıdır.
 
 **Enkoder hızı:** N20 enkoderi motor milindedir; tekerlek turu başına 28 × dişli oranı kadar kenar
-üretir (bizim 450 RPM N20: genelde 1:30 → ~840; 450 RPM'de tekerlek başına ~6300 kenar/sn). Yüksek devirde Python kenar sayımı kaçırabilir; aşama 3'teki `eksik`
+üretir (bizim 300 RPM JGA12-N20B: genelde 1:50 → ~1400; 300 RPM'de tekerlek başına ~7000 kenar/sn). Yüksek devirde Python kenar sayımı kaçırabilir; aşama 3'teki `eksik`
 sayacı 0'dan büyükse bildirin.
 
 ## 5. İlk enerji verme sırası

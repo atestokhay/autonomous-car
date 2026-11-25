@@ -93,7 +93,7 @@ def a_tur_basina_tick():
     """N20 motorun dişli oranı modele göre değişir: tekerlek turu başına tick ölçülüp robot.yaml'a yazılır."""
     say("\n--- Tekerlek bir turda kaç sayım üretiyor? ---", "b")
     say("N20 motorlarda bu sayı dişli oranına bağlıdır (enkoder 7 darbe/kanal × 4 kenar × dişli oranı;\n"
-        "450 RPM'lik N20'de genelde 1:30 → yaklaşık 840). Tekerleği işaretle ve ELLE TAM 10 tur ileri çevir. İki tekerlek için yapılır.")
+        "300 RPM'lik N20'de genelde 1:50 → yaklaşık 1400). Tekerleği işaretle ve ELLE TAM 10 tur ileri çevir. İki tekerlek için yapılır.")
     for side in ("left", "right"):
         script("stages/03-enkoder/run.py", "calibrate", "--side", side, "--turns", "10", *mock_arg())
     while True:
